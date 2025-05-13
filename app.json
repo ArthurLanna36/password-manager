@@ -37,6 +37,10 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "EXPO_PUBLIC_SUPABASE_URL": "https://tabsyjxklcxaramykdxe.supabase.co",
+      "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRhYnN5anhrbGN4YXJhbXlrZHhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcxNDk0NzMsImV4cCI6MjA2MjcyNTQ3M30.jrTYKvRzRqVILRQHMLqbtmjqDCjtVTJfYnsKwGmiqrQ"
     }
   }
 }
