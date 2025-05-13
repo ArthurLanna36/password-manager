@@ -1,88 +1,74 @@
-// app/_layout.tsx
-import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider,
-} from "@react-navigation/native";
-import { Session } from "@supabase/supabase-js";
-import { useFonts } from "expo-font";
-import { Stack, useRouter } from "expo-router";
-import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useState } from "react";
-import { ActivityIndicator, View } from "react-native";
-import "react-native-reanimated";
-
+// app/(tabs)/_layout.tsx
 import { supabase } from "@/constants/supabase";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { Feather } from "@expo/vector-icons";
+import { Tabs, useRouter } from "expo-router";
+import React from "react";
+import { TouchableOpacity } from "react-native";
 
-export default function RootLayout() {
-  // Get the current color scheme (dark/light)
+export default function TabsLayout() {
   const colorScheme = useColorScheme();
   const router = useRouter();
 
-  // 1) Font loading hook
-  const [fontsLoaded] = useFonts({
-    SpaceMono: require("../../assets/fonts/SpaceMono-Regular.ttf"),
-  });
+  // sign out and go back to login-page
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.replace("/login-page");
+  };
 
-  // 2) Session & loading state
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  // 3) On mount, resolve the current session and subscribe to changes
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setLoading(false);
-    });
-
-    const { data: listener } = supabase.auth.onAuthStateChange(
-      (_, newSession) => {
-        setSession(newSession);
-      }
-    );
-
-    return () => listener.subscription.unsubscribe();
-  }, []);
-
-  // 4) Redirect to /login as soon as we know there's no session
-  useEffect(() => {
-    if (!loading && !session) {
-      // Move to the login screen
-      router.replace("../login/page");
-    }
-  }, [loading, session]);
-
-  // 5) While fonts or session are loading, show a spinner
-  if (!fontsLoaded || loading) {
-    return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
-  }
-
-  // 6) Render either the tabs (if logged in) or the auth screens
   return (
-    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <Stack>
-        {session ? (
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        ) : (
-          <>
-            <Stack.Screen
-              name="login"
-              options={{ headerShown: false, presentation: "modal" }}
-            />
-            <Stack.Screen
-              name="register"
-              options={{ headerShown: false, presentation: "modal" }}
-            />
-          </>
-        )}
-        <Stack.Screen name="+not-found" options={{ title: "Oops!" }} />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <Tabs
+      screenOptions={{
+        tabBarActiveTintColor: colorScheme === "dark" ? "#fff" : "#000",
+      }}
+    >
+      {/* Home */}
+      <Tabs.Screen
+        name="index" // app/(tabs)/index.tsx
+        options={{
+          headerShown: true,
+          headerTitle: "Home",
+          headerRight: () => (
+            <TouchableOpacity
+              onPress={handleLogout}
+              style={{ marginRight: 16 }}
+            >
+              <Feather
+                name="log-out"
+                size={24}
+                color={colorScheme === "dark" ? "#fff" : "#000"}
+              />
+            </TouchableOpacity>
+          ),
+          tabBarIcon: ({ color, size }) => (
+            <Feather name="home" size={size} color={color} />
+          ),
+        }}
+      />
+
+      {/* First Tab */}
+      <Tabs.Screen
+        name="first-tab" // app/(tabs)/first-tab.tsx
+        options={{
+          headerShown: true,
+          headerTitle: "First Tab",
+          headerRight: () => (
+            <TouchableOpacity
+              onPress={handleLogout}
+              style={{ marginRight: 16 }}
+            >
+              <Feather
+                name="log-out"
+                size={24}
+                color={colorScheme === "dark" ? "#fff" : "#000"}
+              />
+            </TouchableOpacity>
+          ),
+          tabBarIcon: ({ color, size }) => (
+            <Feather name="compass" size={size} color={color} />
+          ),
+        }}
+      />
+    </Tabs>
   );
 }
