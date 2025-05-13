@@ -1,4 +1,4 @@
-namespace PasswordManager.Api.Models
+namespace PasswordManagerApi.Models
 {
     public class SupabaseSettings
     {

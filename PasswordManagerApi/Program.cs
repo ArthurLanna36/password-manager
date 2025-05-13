@@ -3,61 +3,59 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Supabase;
-using PasswordManager.Api.Data;
-using PasswordManager.Api.Models;
+using PasswordManagerApi.Data;
+using PasswordManagerApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1) Bind SupabaseSettings from configuration
+// 1) Bind SupabaseSettings (Url + AnonKey + ServiceRoleKey + JwtSecret)
 builder.Services.Configure<SupabaseSettings>(
     builder.Configuration.GetSection("SupabaseSettings"));
-var supabaseSettings = builder.Configuration
-    .GetSection("SupabaseSettings")
-    .Get<SupabaseSettings>()!;
 
-// 2) Register EF Core DbContext for Supabase Postgres
+var supaSettings = builder.Configuration
+    .GetSection("SupabaseSettings")
+    .Get<SupabaseSettings>()!; // null-forgiving para não gerar warning
+
+// 2) DbContext para Postgres/Supabase
 builder.Services.AddDbContext<AppDbContext>(opts =>
     opts.UseNpgsql(builder.Configuration.GetConnectionString("Supabase")));
 
-// 3) Initialize Supabase .NET client and register as singleton
+// 3) Inicializa e registra o Supabase.Client
 builder.Services.AddSingleton(_ =>
 {
+    // Apenas URL e AnonKey
     var client = new Client(
-        supabaseSettings.Url,
-        supabaseSettings.AnonKey,
-        new ClientOptions
-        {
-            AutoRefreshToken = true,
-            PersistSession   = true
-        });
-    // Synchronously initialize at startup
+        supaSettings.Url,
+        supaSettings.AnonKey);
+
+    // Inicialização obrigatória
     client.InitializeAsync().GetAwaiter().GetResult();
     return client;
 });
 
-// 4) Configure JWT authentication using Supabase JWT secret
+// 4) Configura JWT Bearer usando o JwtSecret
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        var key = Encoding.UTF8.GetBytes(supabaseSettings.JwtSecret);
+        var keyBytes = Encoding.UTF8.GetBytes(supaSettings.JwtSecret);
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey         = new SymmetricSecurityKey(key),
-            ValidIssuer              = $"{supabaseSettings.Url}/auth/v1",
+            IssuerSigningKey         = new SymmetricSecurityKey(keyBytes),
+            ValidIssuer              = $"{supaSettings.Url}/auth/v1",
             ValidAudience            = "authenticated",
             ValidateLifetime         = true
         };
     });
 
-// 5) Add Controllers & Swagger/OpenAPI
+// 5) Controllers + Swagger/OpenAPI
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// 6) Middleware pipeline
+// 6) Pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -69,7 +67,6 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// 7) Map controllers (e.g. AuthController, UsersController)
 app.MapControllers();
 
 app.Run();
