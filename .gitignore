@@ -37,3 +37,9 @@ yarn-error.*
 *.tsbuildinfo
 
 app-example
+
+# .NET Secret Manager
+**/secrets.json
+
+# local files
+appsettings.Development.json
