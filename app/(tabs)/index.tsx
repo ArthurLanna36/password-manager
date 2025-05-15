@@ -1,25 +1,18 @@
-import { StyleSheet } from "react-native";
-
-import ParallaxScrollView from "@/components/ParallaxScrollView";
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
+// app/(tabs)/index.tsx
+import React from "react";
+import { Text, View } from "react-native";
 
 export default function HomeScreen() {
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
+    <View
+      style={{
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "#000",
+      }}
     >
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Password Manager</ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+      <Text style={{ color: "#fff", fontSize: 24 }}>Password Manager</Text>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-});
