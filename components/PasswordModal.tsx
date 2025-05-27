@@ -5,7 +5,7 @@ import { PasswordEntry, PasswordFormData } from "@/types/vault"; // Ensure this 
 import { Feather } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import {
-  Alert, // Keep Alert for user feedback on validation for now
+  Alert,
   Keyboard,
   KeyboardAvoidingView,
   Modal,
@@ -39,6 +39,7 @@ export function PasswordModal({
   const [serviceName, setServiceName] = useState("");
   const [username, setUsername] = useState("");
   const [passwordPlain, setPasswordPlain] = useState("");
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false); // New state for password visibility
 
   const isEditing = !!initialData;
   const modalTitle = isEditing ? "Edit Password" : "Add New Password";
@@ -57,12 +58,14 @@ export function PasswordModal({
         setServiceName(initialData.serviceName);
         setUsername(initialData.username || "");
         setPasswordPlain(""); // Password field is cleared for security when editing
+        setIsPasswordVisible(false); // Reset visibility when opening
       } else {
         // Add mode: reset form fields
         console.log("[PasswordModal] Opening in Add Mode.");
         setServiceName("");
         setUsername("");
         setPasswordPlain("");
+        setIsPasswordVisible(false); // Reset visibility when opening
       }
     }
   }, [visible, initialData]); // Re-run effect if visibility or initialData changes
@@ -73,14 +76,16 @@ export function PasswordModal({
       Alert.alert("Validation Error", "Service Name is required.");
       return;
     }
-    if (!passwordPlain.trim() && !isEditing) {
-      // Password is required only when adding a new one or explicitly changing it
+    // If not editing, password is required.
+    // If editing and a new password was typed, it's required.
+    if (!isEditing && !passwordPlain.trim()) {
       Alert.alert("Validation Error", "Password is required.");
       return;
     }
+    // If editing, but NOTHING was changed (including password which remains empty in the field)
     if (
       isEditing &&
-      !passwordPlain.trim() &&
+      !passwordPlain.trim() && // No new password typed
       serviceName === initialData?.serviceName &&
       username === (initialData?.username || "")
     ) {
@@ -92,7 +97,7 @@ export function PasswordModal({
     onSubmit({
       serviceName: serviceName.trim(),
       username: username.trim() || undefined, // Send undefined if empty for Supabase to store as NULL
-      passwordPlain: passwordPlain, // Send even if empty for edit, backend logic decides if it's an update
+      passwordPlain: passwordPlain, // Send password as is (can be empty if editing and not changed)
     });
     // The onSubmit callback (in VaultScreen) is responsible for closing the modal upon successful submission.
   };
@@ -137,6 +142,29 @@ export function PasswordModal({
       color: Colors[colorScheme].text,
       backgroundColor: Colors[colorScheme].background,
     },
+    // New style for the password input container
+    passwordInputContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: Colors[colorScheme].icon,
+      borderRadius: 8,
+      marginBottom: 15,
+      backgroundColor: Colors[colorScheme].background,
+    },
+    passwordInput: {
+      // Style for the TextInput within the container
+      flex: 1, // To take up remaining space
+      paddingHorizontal: 15,
+      paddingVertical: Platform.OS === "ios" ? 15 : 12,
+      fontSize: 16,
+      color: Colors[colorScheme].text,
+      // Remove individual borders as the container already has them
+    },
+    eyeIcon: {
+      // Style for the touchable area of the icon
+      padding: 10,
+    },
     buttonContainer: {
       flexDirection: "row",
       justifyContent: "space-around", // Or 'flex-end' with spacing
@@ -159,7 +187,6 @@ export function PasswordModal({
     },
     buttonText: {
       // Text color for buttons should contrast with button background
-      // Assuming tint and icon are dark, background is light for light theme and vice-versa
       color:
         colorScheme === "light"
           ? Colors.light.background
@@ -174,7 +201,6 @@ export function PasswordModal({
     buttonTextCancel: {
       // Specific for cancel if its background is icon color
       color: Colors[colorScheme].text, // Text color for cancel (assuming icon color is darker than text)
-      // Or Colors[colorScheme].background if icon is a light color
     },
     closeButton: {
       position: "absolute",
@@ -225,15 +251,29 @@ export function PasswordModal({
                 autoCapitalize="none"
                 keyboardType="email-address"
               />
-              <TextInput
-                style={themedStyles.input}
-                placeholder="Password"
-                placeholderTextColor={Colors[colorScheme].icon}
-                secureTextEntry
-                value={passwordPlain}
-                onChangeText={setPasswordPlain}
-                autoCapitalize="none"
-              />
+              {/* Password input field modification */}
+              <View style={themedStyles.passwordInputContainer}>
+                <TextInput
+                  style={themedStyles.passwordInput}
+                  placeholder="Password"
+                  placeholderTextColor={Colors[colorScheme].icon}
+                  secureTextEntry={!isPasswordVisible} // Controlled by state
+                  value={passwordPlain}
+                  onChangeText={setPasswordPlain}
+                  autoCapitalize="none"
+                />
+                <TouchableOpacity
+                  style={themedStyles.eyeIcon}
+                  onPress={() => setIsPasswordVisible(!isPasswordVisible)}
+                >
+                  <Feather
+                    name={isPasswordVisible ? "eye-off" : "eye"} // Toggles icon
+                    size={22}
+                    color={Colors[colorScheme].icon}
+                  />
+                </TouchableOpacity>
+              </View>
+              {/* End of password input field modification */}
               <View style={themedStyles.buttonContainer}>
                 <TouchableOpacity
                   style={[themedStyles.button, themedStyles.cancelButton]}

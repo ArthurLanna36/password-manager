@@ -13,8 +13,9 @@ import {
   generateSalt,
 } from "@/utils/encryptionService"; // Adjust path if necessary
 import { Feather } from "@expo/vector-icons";
+import * as Clipboard from "expo-clipboard"; // Import Clipboard
 import { useFocusEffect } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react"; // Added useRef
 import {
   ActivityIndicator,
   Alert,
@@ -22,7 +23,7 @@ import {
   Keyboard,
   Platform,
   RefreshControl,
-  TextInput as RNTextInput,
+  TextInput as RNTextInput, // Renamed to avoid conflict if GestureHandler TextInput is used here
   StyleSheet,
   TouchableOpacity,
   View,
@@ -59,6 +60,11 @@ export default function VaultScreen() {
   const [setupMasterPassword, setSetupMasterPassword] = useState("");
   const [confirmSetupMasterPassword, setConfirmSetupMasterPassword] =
     useState("");
+
+  // New states for revealing password in the list
+  const [showPasswordId, setShowPasswordId] = useState<string | null>(null); // ID of the item whose password is being shown
+  const [revealedPassword, setRevealedPassword] = useState<string | null>(null); // The decrypted password string
+  const revealTimeoutRef = useRef<number | null>(null); // Ref to store the timeout ID for auto-hiding revealed password (CORRECTED TYPE)
 
   // Fetches user profile (salt, verification data) from Supabase
   const fetchUserProfile = useCallback(async (userId: string) => {
@@ -107,6 +113,9 @@ export default function VaultScreen() {
       setNeedsVaultSetup(false);
       setPasswords([]);
       setDerivedEncryptionKey(null);
+      setShowPasswordId(null); // Ensure revealed password state is cleared
+      setRevealedPassword(null);
+      if (revealTimeoutRef.current) clearTimeout(revealTimeoutRef.current); // Clear any pending timeout
       setIsLoading(false);
       return;
     }
@@ -119,6 +128,9 @@ export default function VaultScreen() {
         setIsVaultLocked(false);
       } else {
         setIsVaultLocked(true);
+        setShowPasswordId(null); // Clear revealed password if vault gets locked
+        setRevealedPassword(null);
+        if (revealTimeoutRef.current) clearTimeout(revealTimeoutRef.current);
       }
     } else {
       console.log(
@@ -128,6 +140,9 @@ export default function VaultScreen() {
       setIsVaultLocked(true);
       setPasswords([]);
       setDerivedEncryptionKey(null);
+      setShowPasswordId(null);
+      setRevealedPassword(null);
+      if (revealTimeoutRef.current) clearTimeout(revealTimeoutRef.current);
     }
     setIsLoading(false);
   }, [fetchUserProfile, derivedEncryptionKey]);
@@ -135,6 +150,14 @@ export default function VaultScreen() {
   useFocusEffect(
     useCallback(() => {
       checkVaultStatus();
+      // Cleanup for revealed password when screen loses focus or on unmount
+      return () => {
+        if (revealTimeoutRef.current) {
+          clearTimeout(revealTimeoutRef.current);
+        }
+        setShowPasswordId(null);
+        setRevealedPassword(null);
+      };
     }, [checkVaultStatus])
   );
 
@@ -199,8 +222,8 @@ export default function VaultScreen() {
         setIsRefreshing(false);
       }
     },
-    [isVaultLocked, derivedEncryptionKey]
-  ); // Dependencies for useCallback
+    [isVaultLocked, derivedEncryptionKey] // Dependencies for useCallback
+  );
 
   // Effect to fetch passwords when vault becomes unlocked and key is available
   useEffect(() => {
@@ -214,8 +237,9 @@ export default function VaultScreen() {
 
   const onRefresh = useCallback(() => {
     if (!isVaultLocked && derivedEncryptionKey) {
-      fetchPasswords(true);
+      fetchPasswords(true); // Pass true to indicate it's a refresh action
     } else {
+      // If vault is locked, just stop the refresh indicator
       setIsRefreshing(false);
     }
   }, [isVaultLocked, derivedEncryptionKey, fetchPasswords]);
@@ -227,6 +251,7 @@ export default function VaultScreen() {
       return;
     }
     if (setupMasterPassword.length < 8) {
+      // Basic password length check
       Alert.alert("Error", "Master password must be at least 8 characters.");
       return;
     }
@@ -258,6 +283,7 @@ export default function VaultScreen() {
       const { error: profileError } = await supabase
         .from(PROFILES_TABLE_NAME)
         .insert({
+          // Changed to insert as profile might not exist yet
           id: user.id,
           encryption_salt: newSalt,
           master_password_verify_cipher: encryptedVerification.cipherTextHex,
@@ -323,24 +349,25 @@ export default function VaultScreen() {
         if (decryptedVerification === VERIFICATION_STRING) {
           setDerivedEncryptionKey(key);
           setIsVaultLocked(false);
-          setMasterPasswordInput("");
+          setMasterPasswordInput(""); // Clear input after successful unlock
           Alert.alert("Success", "Vault Unlocked!");
         } else {
           Alert.alert("Unlock Failed", "Incorrect master password.");
-          setDerivedEncryptionKey(null);
+          setDerivedEncryptionKey(null); // Ensure key is null on failure
         }
       } else {
+        // This case implies the profile exists but lacks verification data, or profile doesn't exist
         Alert.alert(
           "Configuration Error",
           "User profile or verification data not found. Please set up the vault."
         );
-        setNeedsVaultSetup(true);
+        setNeedsVaultSetup(true); // Guide user to setup
         setDerivedEncryptionKey(null);
       }
     } catch (error: any) {
       console.error("[VaultScreen] Error unlocking vault:", error.message);
       Alert.alert("Unlock Error", "Failed to unlock the vault.");
-      setDerivedEncryptionKey(null);
+      setDerivedEncryptionKey(null); // Ensure key is null on error
     } finally {
       setIsLoading(false);
     }
@@ -365,33 +392,66 @@ export default function VaultScreen() {
       return;
     }
 
-    const encryptedResult = await encryptDataWithKey(
-      formData.passwordPlain,
-      derivedEncryptionKey
-    );
-    if (!encryptedResult) {
-      Alert.alert("Encryption Error", "Could not encrypt password data.");
+    // Password must be provided for new entries.
+    // For edits, if passwordPlain is empty, we keep the old encrypted password.
+    if (!formData.passwordPlain && !editingPassword) {
+      Alert.alert(
+        "Validation Error",
+        "Password cannot be empty for new entries."
+      );
       setIsLoading(false);
       return;
     }
-    const { cipherTextHex, ivHex } = encryptedResult;
+
+    let cipherTextHex = editingPassword?.passwordEncrypted;
+    let ivHex = editingPassword?.iv;
+
+    // Only re-encrypt if a new password (formData.passwordPlain) was provided.
+    if (formData.passwordPlain) {
+      const encryptedResult = await encryptDataWithKey(
+        formData.passwordPlain,
+        derivedEncryptionKey
+      );
+      if (!encryptedResult) {
+        Alert.alert("Encryption Error", "Could not encrypt password data.");
+        setIsLoading(false);
+        return;
+      }
+      cipherTextHex = encryptedResult.cipherTextHex;
+      ivHex = encryptedResult.ivHex;
+    } else if (editingPassword && !formData.passwordPlain) {
+      // If editing and password field is empty, keep the old encrypted data
+      cipherTextHex = editingPassword.passwordEncrypted;
+      ivHex = editingPassword.iv;
+    }
 
     try {
       if (editingPassword && editingPassword.id) {
+        // Update existing password
         const { error } = await supabase
           .from(VAULT_TABLE_NAME)
           .update({
             service_name: formData.serviceName,
-            username: formData.username || null,
-            encrypted_password: cipherTextHex,
-            iv: ivHex,
+            username: formData.username || null, // Store as NULL if empty
+            encrypted_password: cipherTextHex, // Use new or existing encrypted data
+            iv: ivHex, // Use new or existing IV
             updated_at: new Date().toISOString(),
           })
           .eq(VAULT_PK_COLUMN, editingPassword.id)
-          .eq("user_id", user.id);
+          .eq("user_id", user.id); // Ensure user can only update their own
         if (error) throw error;
         Alert.alert("Success", "Password updated!");
       } else {
+        // Add new password
+        if (!cipherTextHex || !ivHex) {
+          // This should not happen if logic above is correct
+          Alert.alert(
+            "Internal Error",
+            "Encryption data is missing for new entry."
+          );
+          setIsLoading(false);
+          return;
+        }
         const { error } = await supabase
           .from(VAULT_TABLE_NAME)
           .insert([
@@ -403,7 +463,7 @@ export default function VaultScreen() {
               iv: ivHex,
             },
           ])
-          .select();
+          .select(); // .select() is optional here, insert doesn't return data by default unless specified
         if (error) throw error;
         Alert.alert("Success", "Password added!");
       }
@@ -416,7 +476,7 @@ export default function VaultScreen() {
       Alert.alert("Save Error", error.message);
     } finally {
       setIsLoading(false);
-      handleModalClose();
+      handleModalClose(); // Close modal regardless of success/failure after attempting save
     }
   };
 
@@ -456,7 +516,7 @@ export default function VaultScreen() {
               .from(VAULT_TABLE_NAME)
               .delete()
               .eq(VAULT_PK_COLUMN, itemToDelete.id)
-              .eq("user_id", user.id);
+              .eq("user_id", user.id); // Ensure user can only delete their own
 
             if (deleteError) {
               console.error(
@@ -487,62 +547,104 @@ export default function VaultScreen() {
       Alert.alert("Vault Locked", "Unlock the vault to add passwords.");
       return;
     }
-    setEditingPassword(null);
+    setEditingPassword(null); // Ensure not in edit mode
     setModalVisible(true);
   };
+
   const handleOpenEditModal = (item: PasswordEntry) => {
     if (isVaultLocked) {
       Alert.alert("Vault Locked", "Unlock the vault to edit passwords.");
       return;
     }
-    setEditingPassword(item);
+    setEditingPassword(item); // Set item being edited
     setModalVisible(true);
   };
+
   const handleModalClose = () => {
     setModalVisible(false);
-    setEditingPassword(null);
+    setEditingPassword(null); // Clear editing state when modal closes
+  };
+
+  // Function to toggle password visibility in the list
+  const handleTogglePasswordVisibility = async (item: PasswordEntry) => {
+    // Clear any existing timeout if user interacts again
+    if (revealTimeoutRef.current) {
+      clearTimeout(revealTimeoutRef.current);
+      revealTimeoutRef.current = null;
+    }
+
+    if (showPasswordId === item.id) {
+      // If currently shown, hide it immediately
+      setShowPasswordId(null);
+      setRevealedPassword(null);
+      return;
+    }
+
+    // If trying to show a new password
+    if (isVaultLocked || !derivedEncryptionKey) {
+      Alert.alert("Vault Locked", "Unlock the vault to view the password.");
+      setShowPasswordId(null); // Ensure states are reset if vault is locked
+      setRevealedPassword(null);
+      return;
+    }
+    if (!item.iv || !item.passwordEncrypted) {
+      Alert.alert(
+        "Error",
+        "Encrypted password data is incomplete (missing IV or ciphertext)."
+      );
+      setShowPasswordId(null);
+      setRevealedPassword(null);
+      return;
+    }
+
+    setIsLoading(true); // Using global isLoading; consider item-specific loading if preferred
+    const decrypted = await decryptDataWithKey(
+      item.passwordEncrypted,
+      item.iv,
+      derivedEncryptionKey
+    );
+    setIsLoading(false);
+
+    if (decrypted) {
+      setShowPasswordId(item.id);
+      setRevealedPassword(decrypted);
+
+      // Set a new timeout to hide the password
+      revealTimeoutRef.current = setTimeout(() => {
+        // Only hide if this specific item is still the one being shown.
+        // This uses a functional update for setShowPasswordId to get the latest state.
+        setShowPasswordId((currentShowPasswordId) => {
+          if (currentShowPasswordId === item.id) {
+            setRevealedPassword(null); // Clear the revealed password text first
+            return null; // Then clear the ID, effectively hiding it
+          }
+          return currentShowPasswordId; // Otherwise, no change to which ID is shown
+        });
+        revealTimeoutRef.current = null; // Clear the ref after timeout executes or is cleared
+      }, 10000); // Hide after 10 seconds
+    } else {
+      Alert.alert(
+        "Decryption Error",
+        "Could not decrypt password. Incorrect Master Password or corrupted data?"
+      );
+      setShowPasswordId(null); // Ensure states are reset on decryption failure
+      setRevealedPassword(null);
+    }
+  };
+
+  const copyToClipboard = async (text: string) => {
+    await Clipboard.setStringAsync(text);
+    Alert.alert("Copied!", "Password copied to clipboard.");
   };
 
   // --- Render Item for FlatList ---
   const renderPasswordItem = ({ item }: { item: PasswordEntry }) => {
-    const showDecrypted = async () => {
-      if (isVaultLocked || !derivedEncryptionKey) {
-        Alert.alert("Vault Locked", "Unlock the vault to view the password.");
-        return;
-      }
-      if (!item.iv || !item.passwordEncrypted) {
-        Alert.alert(
-          "Error",
-          "Encrypted password data is incomplete (missing IV or ciphertext)."
-        );
-        return;
-      }
-      setIsLoading(true);
-      const decrypted = await decryptDataWithKey(
-        item.passwordEncrypted,
-        item.iv,
-        derivedEncryptionKey
-      );
-      setIsLoading(false);
-      if (decrypted) {
-        Alert.alert(
-          `Password for ${item.serviceName}`,
-          `Password: ${decrypted}\n\n(Temporary display. Implement secure viewing.)`
-        );
-      } else {
-        Alert.alert(
-          "Decryption Error",
-          "Could not decrypt password. Incorrect Master Password or corrupted data?"
-        );
-      }
-    };
+    const isRevealed = showPasswordId === item.id && revealedPassword !== null;
 
     return (
-      <View style={styles.itemOuterContainer}>
-        <TouchableOpacity
-          style={styles.itemContentContainer}
-          onPress={showDecrypted}
-        >
+      <ThemedView style={styles.itemOuterContainer}>
+        {/* Main content area of the item (service name, username, revealed password) */}
+        <View style={styles.itemContentContainer}>
           <View style={styles.itemTextContainer}>
             <ThemedText style={styles.itemText}>{item.serviceName}</ThemedText>
             {item.username && (
@@ -550,9 +652,45 @@ export default function VaultScreen() {
                 {item.username}
               </ThemedText>
             )}
+            {/* Conditionally render the revealed password */}
+            {isRevealed && (
+              <View style={styles.revealedPasswordContainer}>
+                <ThemedText style={styles.revealedPasswordText}>
+                  {revealedPassword}
+                </ThemedText>
+                <TouchableOpacity
+                  onPress={() => copyToClipboard(revealedPassword!)}
+                  style={styles.copyButton}
+                >
+                  <Feather
+                    name="copy"
+                    size={18}
+                    color={Colors[colorScheme].tint}
+                  />
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
-        </TouchableOpacity>
+        </View>
+
+        {/* Action buttons (Reveal, Edit, Delete) */}
         <View style={styles.itemActions}>
+          <TouchableOpacity
+            onPress={() => handleTogglePasswordVisibility(item)}
+            style={styles.actionButton}
+            disabled={isLoading || isVaultLocked} // Disable if loading or vault is locked
+          >
+            <Feather
+              name={isRevealed ? "eye-off" : "eye"} // Toggle icon based on revealed state
+              size={20}
+              color={
+                isLoading || isVaultLocked
+                  ? Colors[colorScheme].icon // Dimmed color when disabled
+                  : Colors[colorScheme].tint // Active color
+              }
+            />
+          </TouchableOpacity>
+
           <TouchableOpacity
             onPress={() => handleOpenEditModal(item)}
             style={styles.actionButton}
@@ -579,16 +717,17 @@ export default function VaultScreen() {
               color={
                 isLoading || isVaultLocked
                   ? Colors[colorScheme].icon
-                  : "#FF6347"
+                  : "#FF6347" // Specific color for delete action
               }
             />
           </TouchableOpacity>
         </View>
-      </View>
+      </ThemedView>
     );
   };
 
   // --- Conditional UI Rendering ---
+  // Initial loading state check (before vault status is known)
   if (isLoading && !userSalt && !derivedEncryptionKey && !needsVaultSetup) {
     return (
       <ThemedView style={[styles.container, styles.loadingContainer]}>
@@ -597,6 +736,7 @@ export default function VaultScreen() {
     );
   }
 
+  // Vault setup screen
   if (needsVaultSetup) {
     return (
       <ThemedView style={[styles.container, styles.unlockVaultContainer]}>
@@ -607,10 +747,11 @@ export default function VaultScreen() {
           Create a strong master password. This password will encrypt all your
           other passwords. **Do not forget it, as it cannot be recovered!**
         </ThemedText>
-        <RNTextInput
+        <RNTextInput // Using RNTextInput for master password inputs
           style={[
-            styles.input,
+            styles.input, // General input style
             {
+              // Theme-specific overrides
               borderColor: Colors[colorScheme].icon,
               color: Colors[colorScheme].text,
               backgroundColor: Colors[colorScheme].background,
@@ -637,16 +778,16 @@ export default function VaultScreen() {
           secureTextEntry
           value={confirmSetupMasterPassword}
           onChangeText={setConfirmSetupMasterPassword}
-          onSubmitEditing={handleSetupVault}
+          onSubmitEditing={handleSetupVault} // Allow submit on return key
           autoCapitalize="none"
         />
         <TouchableOpacity
           style={[
-            styles.button,
+            styles.button, // General button style
             {
+              // Theme-specific overrides
               backgroundColor: Colors[colorScheme].tint,
-              marginTop: 20,
-              width: "90%",
+              marginTop: 20, // Additional spacing
             },
           ]}
           onPress={handleSetupVault}
@@ -657,8 +798,8 @@ export default function VaultScreen() {
           ) : (
             <ThemedText
               style={[
-                styles.buttonText,
-                { color: Colors[colorScheme].background },
+                styles.buttonText, // General button text style
+                { color: Colors[colorScheme].background }, // Text color for this button
               ]}
             >
               Save and Set Up Vault
@@ -669,6 +810,7 @@ export default function VaultScreen() {
     );
   }
 
+  // Vault unlock screen
   if (isVaultLocked) {
     return (
       <ThemedView style={[styles.container, styles.unlockVaultContainer]}>
@@ -687,7 +829,7 @@ export default function VaultScreen() {
           secureTextEntry
           value={masterPasswordInput}
           onChangeText={setMasterPasswordInput}
-          onSubmitEditing={handleUnlockVault}
+          onSubmitEditing={handleUnlockVault} // Allow submit on return key
           autoCapitalize="none"
         />
         <TouchableOpacity
@@ -696,7 +838,6 @@ export default function VaultScreen() {
             {
               backgroundColor: Colors[colorScheme].tint,
               marginTop: 20,
-              width: "90%",
             },
           ]}
           onPress={handleUnlockVault}
@@ -722,6 +863,7 @@ export default function VaultScreen() {
   // Main Vault UI (when unlocked)
   return (
     <ThemedView style={styles.container}>
+      {/* Loading indicator for initial password fetch */}
       {isLoading && passwords.length === 0 && !isRefreshing ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors[colorScheme].tint} />
@@ -733,10 +875,11 @@ export default function VaultScreen() {
         <FlatList
           data={passwords}
           renderItem={renderPasswordItem}
-          keyExtractor={(item) => String(item.id)}
+          keyExtractor={(item) => String(item.id)} // Ensure ID is a string for key
           contentContainerStyle={styles.listContentContainer}
           ListEmptyComponent={
-            !isLoading ? (
+            // Displayed when the password list is empty
+            !isLoading ? ( // Only show if not in the middle of loading
               <View style={styles.emptyStateContainer}>
                 <ThemedText style={styles.emptyText}>
                   No passwords saved yet.
@@ -745,33 +888,36 @@ export default function VaultScreen() {
                   Tap '+' to add one.
                 </ThemedText>
               </View>
-            ) : null
+            ) : null // Don't show empty state if still loading
           }
           refreshControl={
+            // Pull-to-refresh functionality
             <RefreshControl
               refreshing={isRefreshing}
               onRefresh={onRefresh}
-              tintColor={Colors[colorScheme].tint}
-              colors={[Colors[colorScheme].tint]}
+              tintColor={Colors[colorScheme].tint} // iOS spinner color
+              colors={[Colors[colorScheme].tint]} // Android spinner color(s)
             />
           }
         />
       )}
+      {/* Floating Action Button to add new passwords */}
       <TouchableOpacity
         style={[
           styles.addButton,
-          { backgroundColor: Colors[colorScheme].tint },
+          { backgroundColor: Colors[colorScheme].tint }, // Themed background
         ]}
         onPress={handleOpenAddModal}
-        disabled={isLoading}
+        disabled={isLoading} // Disable if an operation is in progress
       >
         <Feather name="plus" size={30} color={Colors[colorScheme].background} />
       </TouchableOpacity>
+      {/* Modal for adding/editing passwords */}
       <PasswordModal
         visible={modalVisible}
         onClose={handleModalClose}
         onSubmit={handleModalSubmit}
-        initialData={editingPassword}
+        initialData={editingPassword} // Pass data if editing, null if adding
       />
     </ThemedView>
   );
@@ -779,21 +925,24 @@ export default function VaultScreen() {
 
 // Styles
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
+  container: { flex: 1 }, // Main container for the screen
+  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" }, // Centered loading indicator
   unlockVaultContainer: {
+    // Container for vault setup and unlock screens
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 20,
+    padding: 20, // Padding around the content
   },
   unlockTitle: {
+    // Title text for setup/unlock screens
     fontSize: 24,
     fontWeight: "bold",
     marginBottom: 20,
     textAlign: "center",
   },
   setupInstructions: {
+    // Instructional text for vault setup
     fontSize: 16,
     textAlign: "center",
     marginBottom: 20,
@@ -801,67 +950,111 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   input: {
+    // Style for master password TextInput fields
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 15,
     paddingVertical: Platform.OS === "ios" ? 15 : 12,
     marginBottom: 15,
     fontSize: 16,
-    width: "100%",
+    width: "90%", // Make input take most of the width
   },
   button: {
+    // General style for setup/unlock buttons
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
-    width: "100%",
+    width: "90%", // Make button take most of the width
   },
-  buttonText: { fontSize: 16, fontWeight: "600" },
-  listContentContainer: { paddingTop: 10, paddingBottom: 90 },
+  buttonText: { fontSize: 16, fontWeight: "600" }, // Text style for buttons
+  listContentContainer: { paddingTop: 10, paddingBottom: 90 }, // Padding for FlatList content
   itemOuterContainer: {
+    // Container for each password item in the list
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "center", // Align items vertically centered
     marginHorizontal: 15,
     marginVertical: 6,
-    padding: 15,
+    paddingVertical: 10, // Vertical padding inside the item
+    paddingHorizontal: 15, // Horizontal padding
     borderRadius: 10,
-    shadowColor: "#000",
+    // Background color will be applied by ThemedView
+    shadowColor: "#000", // Shadow for iOS
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
-    elevation: 3,
+    elevation: 3, // Shadow for Android
   },
-  itemContentContainer: { flex: 1, marginRight: 10 },
-  itemTextContainer: {},
-  itemText: { fontSize: 18, fontWeight: "bold" },
-  itemUsernameText: { fontSize: 14, opacity: 0.7, marginTop: 3 },
-  itemActions: { flexDirection: "row", alignItems: "center" },
-  actionButton: { padding: 10, marginLeft: 10 },
+  itemContentContainer: {
+    // Container for text content (service, username, revealed password)
+    flex: 1, // Take available space
+    marginRight: 10, // Space before action buttons
+  },
+  itemTextContainer: {
+    // Wraps all text elements
+    // No specific styles needed here, children will define their own
+  },
+  itemText: { fontSize: 18, fontWeight: "bold" }, // Service name text
+  itemUsernameText: { fontSize: 14, opacity: 0.7, marginTop: 3 }, // Username text
+  revealedPasswordContainer: {
+    // Container for the revealed password and copy button
+    marginTop: 8,
+    padding: 8,
+    borderRadius: 6,
+    backgroundColor: "rgba(128,128,128,0.1)", // Subtle background for revealed password
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  revealedPasswordText: {
+    // Text style for the revealed password
+    fontSize: 15,
+    flexShrink: 1, // Allow text to shrink if too long before copy icon
+  },
+  copyButton: {
+    // Touchable area for the copy icon
+    marginLeft: 10, // Space between password text and copy icon
+    padding: 5, // Clickable area
+  },
+  itemActions: {
+    // Container for action buttons (reveal, edit, delete)
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  actionButton: {
+    // Style for individual action buttons
+    padding: 8, // Touch area
+    marginLeft: 8, // Space between action buttons
+  },
   emptyStateContainer: {
-    flex: 1,
+    // Container for when the password list is empty
+    flex: 1, // Take up available space
     justifyContent: "center",
     alignItems: "center",
-    paddingBottom: 60,
+    paddingTop: 50, // Add some space from the top
+    paddingBottom: 60, // Space from the bottom/add button
   },
-  emptyText: { textAlign: "center", fontSize: 18, opacity: 0.8 },
+  emptyText: { textAlign: "center", fontSize: 18, opacity: 0.8 }, // Main empty state text
   emptySubText: {
+    // Sub-text for empty state
     textAlign: "center",
     fontSize: 15,
     opacity: 0.6,
     marginTop: 8,
   },
   addButton: {
+    // Floating action button for adding new passwords
     position: "absolute",
     right: 25,
     bottom: 25,
     width: 60,
     height: 60,
-    borderRadius: 30,
+    borderRadius: 30, // Make it circular
     justifyContent: "center",
     alignItems: "center",
-    elevation: 8,
-    shadowColor: "#000",
+    elevation: 8, // Shadow for Android
+    shadowColor: "#000", // Shadow for iOS
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 5,
