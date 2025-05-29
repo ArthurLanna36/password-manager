@@ -20,14 +20,14 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme].tint, // Usar a cor de tint definida
-        tabBarInactiveTintColor: Colors[colorScheme].tabIconDefault,
+        tabBarInactiveTintColor: Colors[colorScheme].tabIconDefault, //
         tabBarStyle: {
-          backgroundColor: Colors[colorScheme].background,
+          backgroundColor: Colors[colorScheme].background, //
         },
         headerStyle: {
-          backgroundColor: Colors[colorScheme].background,
+          backgroundColor: Colors[colorScheme].background, //
         },
-        headerTintColor: Colors[colorScheme].text,
+        headerTintColor: Colors[colorScheme].text, //
       }}
     >
       {/* Home */}
@@ -52,13 +52,13 @@ export default function TabsLayout() {
             <Feather
               name="home"
               size={28}
-              color={focused ? Colors[colorScheme].tint : color}
+              color={focused ? Colors[colorScheme].tint : color} //
             />
           ),
         }}
       />
 
-      {/* Vault Tab (Antiga first-tab) */}
+      {/* Vault Tab */}
       <Tabs.Screen
         name="vault" // Nome do arquivo: app/(tabs)/vault.tsx
         options={{
@@ -66,7 +66,7 @@ export default function TabsLayout() {
           headerTitle: "Seu Cofre", // Título do Header
           headerRight: () => (
             <TouchableOpacity
-              onPress={handleLogout} // Mantém o logout, mas pode ser alterado
+              onPress={handleLogout}
               style={{ marginRight: 16 }}
             >
               <Feather
@@ -79,6 +79,34 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, focused }) => (
             <Feather
               name="shield" // Ícone de cofre/segurança
+              size={28}
+              color={focused ? Colors[colorScheme].tint : color} //
+            />
+          ),
+        }}
+      />
+
+      {/* Generator Tab (NOVA) */}
+      <Tabs.Screen
+        name="generator" // Nome do arquivo: app/(tabs)/generator.tsx
+        options={{
+          title: "Gerador", // Título da Aba
+          headerTitle: "Gerador de Senhas", // Título do Header
+          headerRight: () => (
+            <TouchableOpacity
+              onPress={handleLogout} // Mantém o logout, pode ser alterado se necessário
+              style={{ marginRight: 16 }}
+            >
+              <Feather
+                name="log-out"
+                size={24}
+                color={Colors[colorScheme].text}
+              />
+            </TouchableOpacity>
+          ),
+          tabBarIcon: ({ color, focused }) => (
+            <Feather
+              name="key" // Ícone de chave para o gerador
               size={28}
               color={focused ? Colors[colorScheme].tint : color}
             />
