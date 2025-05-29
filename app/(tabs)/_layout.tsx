@@ -1,118 +1,108 @@
 // app/(tabs)/_layout.tsx
-import { Colors } from "@/constants/Colors"; // Importar Colors
+import React, { useState } from "react";
+import { View } from "react-native";
+// Certifique-se que Text as PaperText está importado
+import { Feather } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import {
+  Appbar,
+  BottomNavigation,
+  Text as PaperText,
+  useTheme,
+} from "react-native-paper";
+
+import GeneratorScreen from "./generator";
+import HomeScreen from "./index";
+import VaultScreen from "./vault";
+
+import { Colors } from "@/constants/Colors";
 import { supabase } from "@/constants/supabase";
 import { useColorScheme } from "@/hooks/useColorScheme";
-import { Feather } from "@expo/vector-icons"; // Mantido para ícones
-import { Tabs, useRouter } from "expo-router";
-import React from "react";
-import { TouchableOpacity } from "react-native";
 
-export default function TabsLayout() {
-  const colorScheme = useColorScheme() ?? "light";
+export default function TabLayout() {
   const router = useRouter();
+  const colorScheme = useColorScheme() ?? "light";
+  const paperTheme = useTheme();
+
+  const [index, setIndex] = useState(0);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.replace("/login-page");
   };
 
+  const [routes] = useState([
+    {
+      key: "home",
+      title: "Home",
+      tabBarLabel: "Home", // Usado no renderLabel
+      focusedIcon: ({ color, size }: { color: string; size: number }) => (
+        <Feather name="home" size={size} color={color} />
+      ),
+      unfocusedIcon: ({ color, size }: { color: string; size: number }) => (
+        <Feather name="home" size={size} color={color} />
+      ),
+    },
+    {
+      key: "vault",
+      title: "Seu Cofre",
+      tabBarLabel: "Vault", // Usado no renderLabel
+      focusedIcon: ({ color, size }: { color: string; size: number }) => (
+        <Feather name="shield" size={size} color={color} />
+      ),
+      unfocusedIcon: ({ color, size }: { color: string; size: number }) => (
+        <Feather name="shield" size={size} color={color} />
+      ),
+    },
+    {
+      key: "generator",
+      title: "Gerador de Senhas",
+      tabBarLabel: "Gerador", // Usado no renderLabel
+      focusedIcon: ({ color, size }: { color: string; size: number }) => (
+        <Feather name="key" size={size} color={color} />
+      ),
+      unfocusedIcon: ({ color, size }: { color: string; size: number }) => (
+        <Feather name="key" size={size} color={color} />
+      ),
+    },
+  ]);
+
+  const renderScene = BottomNavigation.SceneMap({
+    home: HomeScreen,
+    vault: VaultScreen,
+    generator: GeneratorScreen,
+  });
+
+  const currentRouteTitle = routes[index].title;
+
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme].tint, // Usar a cor de tint definida
-        tabBarInactiveTintColor: Colors[colorScheme].tabIconDefault, //
-        tabBarStyle: {
-          backgroundColor: Colors[colorScheme].background, //
-        },
-        headerStyle: {
-          backgroundColor: Colors[colorScheme].background, //
-        },
-        headerTintColor: Colors[colorScheme].text, //
-      }}
-    >
-      {/* Home */}
-      <Tabs.Screen
-        name="index" // app/(tabs)/index.tsx
-        options={{
-          title: "Home", // Título da Aba
-          headerTitle: "Home", // Título do Header
-          headerRight: () => (
-            <TouchableOpacity
-              onPress={handleLogout}
-              style={{ marginRight: 16 }}
-            >
-              <Feather
-                name="log-out"
-                size={24}
-                color={Colors[colorScheme].text} // Usar a cor de texto do tema
-              />
-            </TouchableOpacity>
-          ),
-          tabBarIcon: ({ color, focused }) => (
-            <Feather
-              name="home"
-              size={28}
-              color={focused ? Colors[colorScheme].tint : color} //
-            />
-          ),
-        }}
+    <View style={{ flex: 1 }}>
+      <Appbar.Header style={{ backgroundColor: paperTheme.colors.surface }}>
+        <Appbar.Content
+          title={currentRouteTitle}
+          titleStyle={{ color: paperTheme.colors.onSurface }}
+        />
+        <Appbar.Action
+          icon="logout"
+          onPress={handleLogout}
+          color={paperTheme.colors.onSurface}
+        />
+      </Appbar.Header>
+      <BottomNavigation
+        navigationState={{ index, routes }}
+        onIndexChange={setIndex}
+        renderScene={renderScene}
+        shifting={false}
+        barStyle={{ backgroundColor: paperTheme.colors.elevation.level2 }}
+        activeColor={Colors[colorScheme].tint}
+        inactiveColor={Colors[colorScheme].tabIconDefault}
+        // Modifique aqui para usar PaperText
+        renderLabel={({ route, focused, color }) => (
+          <PaperText style={{ color, fontSize: 12, textAlign: "center" }}>
+            {route.tabBarLabel}
+          </PaperText>
+        )}
       />
-
-      {/* Vault Tab */}
-      <Tabs.Screen
-        name="vault" // Nome do arquivo: app/(tabs)/vault.tsx
-        options={{
-          title: "Vault", // Título da Aba
-          headerTitle: "Seu Cofre", // Título do Header
-          headerRight: () => (
-            <TouchableOpacity
-              onPress={handleLogout}
-              style={{ marginRight: 16 }}
-            >
-              <Feather
-                name="log-out"
-                size={24}
-                color={Colors[colorScheme].text} // Usar a cor de texto do tema
-              />
-            </TouchableOpacity>
-          ),
-          tabBarIcon: ({ color, focused }) => (
-            <Feather
-              name="shield" // Ícone de cofre/segurança
-              size={28}
-              color={focused ? Colors[colorScheme].tint : color} //
-            />
-          ),
-        }}
-      />
-
-      {/* Generator Tab (NOVA) */}
-      <Tabs.Screen
-        name="generator" // Nome do arquivo: app/(tabs)/generator.tsx
-        options={{
-          title: "Gerador", // Título da Aba
-          headerTitle: "Gerador de Senhas", // Título do Header
-          headerRight: () => (
-            <TouchableOpacity
-              onPress={handleLogout} // Mantém o logout, pode ser alterado se necessário
-              style={{ marginRight: 16 }}
-            >
-              <Feather
-                name="log-out"
-                size={24}
-                color={Colors[colorScheme].text}
-              />
-            </TouchableOpacity>
-          ),
-          tabBarIcon: ({ color, focused }) => (
-            <Feather
-              name="key" // Ícone de chave para o gerador
-              size={28}
-              color={focused ? Colors[colorScheme].tint : color}
-            />
-          ),
-        }}
-      />
-    </Tabs>
+    </View>
   );
 }
