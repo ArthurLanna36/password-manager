@@ -26,7 +26,7 @@ import { styles } from "./styles/generator.styles";
 
 export default function GeneratorScreen() {
   const colorScheme = useColorScheme() ?? "light";
-  const [passwordLength, setPasswordLength] = useState(12);
+  const [passwordLength, setPasswordLength] = useState(25);
   const [includeUppercase, setIncludeUppercase] = useState(true);
   const [includeLowercase, setIncludeLowercase] = useState(true);
   const [includeNumbers, setIncludeNumbers] = useState(true);
