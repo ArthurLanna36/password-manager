@@ -1,9 +1,7 @@
-// app/(tabs)/_layout.tsx
-import React, { useState } from "react";
-import { View } from "react-native";
-// Certifique-se que Text as PaperText está importado
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import React, { useState } from "react";
+import { View } from "react-native";
 import {
   Appbar,
   BottomNavigation,
@@ -35,7 +33,7 @@ export default function TabLayout() {
     {
       key: "home",
       title: "Home",
-      tabBarLabel: "Home", // Usado no renderLabel
+      tabBarLabel: "Home",
       focusedIcon: ({ color, size }: { color: string; size: number }) => (
         <Feather name="home" size={size} color={color} />
       ),
@@ -45,8 +43,8 @@ export default function TabLayout() {
     },
     {
       key: "vault",
-      title: "Seu Cofre",
-      tabBarLabel: "Vault", // Usado no renderLabel
+      title: "Your Vault",
+      tabBarLabel: "Vault",
       focusedIcon: ({ color, size }: { color: string; size: number }) => (
         <Feather name="shield" size={size} color={color} />
       ),
@@ -56,8 +54,8 @@ export default function TabLayout() {
     },
     {
       key: "generator",
-      title: "Gerador de Senhas",
-      tabBarLabel: "Gerador", // Usado no renderLabel
+      title: "Password Generator",
+      tabBarLabel: "Generator",
       focusedIcon: ({ color, size }: { color: string; size: number }) => (
         <Feather name="key" size={size} color={color} />
       ),
@@ -77,27 +75,28 @@ export default function TabLayout() {
 
   return (
     <View style={{ flex: 1 }}>
-      <Appbar.Header style={{ backgroundColor: paperTheme.colors.surface }}>
+      <Appbar.Header
+        style={{ backgroundColor: paperTheme.colors.elevation.level2 }}
+      >
         <Appbar.Content
           title={currentRouteTitle}
-          titleStyle={{ color: paperTheme.colors.onSurface }}
+          titleStyle={{ color: Colors[colorScheme].text }}
         />
         <Appbar.Action
           icon="logout"
           onPress={handleLogout}
-          color={paperTheme.colors.onSurface}
+          color={Colors[colorScheme].tint}
         />
       </Appbar.Header>
       <BottomNavigation
         navigationState={{ index, routes }}
         onIndexChange={setIndex}
         renderScene={renderScene}
-        shifting={false}
+        shifting={false} // True for shifting animation, and false for fixed tabs
         barStyle={{ backgroundColor: paperTheme.colors.elevation.level2 }}
         activeColor={Colors[colorScheme].tint}
         inactiveColor={Colors[colorScheme].tabIconDefault}
-        // Modifique aqui para usar PaperText
-        renderLabel={({ route, focused, color }) => (
+        renderLabel={({ route, color }) => (
           <PaperText style={{ color, fontSize: 12, textAlign: "center" }}>
             {route.tabBarLabel}
           </PaperText>
