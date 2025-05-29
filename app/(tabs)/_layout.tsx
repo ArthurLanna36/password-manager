@@ -1,3 +1,4 @@
+// app/(tabs)/_layout.tsx
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
@@ -15,14 +16,20 @@ import VaultScreen from "./vault";
 
 import { Colors } from "@/constants/Colors";
 import { supabase } from "@/constants/supabase";
+import {
+  GeneratorProvider,
+  useGeneratorContext,
+} from "@/contexts/GeneratorContext"; // Ensure path is correct
 import { useColorScheme } from "@/hooks/useColorScheme";
 
-export default function TabLayout() {
+// Inner component to access context within the provider's scope
+function TabLayoutContent() {
   const router = useRouter();
   const colorScheme = useColorScheme() ?? "light";
   const paperTheme = useTheme();
-
   const [index, setIndex] = useState(0);
+
+  const { setNeedsClear, clearPasswordAction } = useGeneratorContext();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -72,6 +79,21 @@ export default function TabLayout() {
   });
 
   const currentRouteTitle = routes[index].title;
+  const generatorRouteKey = "generator";
+
+  const handleIndexChange = (newIndex: number) => {
+    const previousRouteKey = routes[index].key;
+    // If previously on the generator tab and navigating away
+    if (previousRouteKey === generatorRouteKey && newIndex !== index) {
+      if (clearPasswordAction) {
+        clearPasswordAction(); // Directly call the clear action from GeneratorScreen
+      } else {
+        // Fallback in case the action is not yet registered
+        setNeedsClear(true);
+      }
+    }
+    setIndex(newIndex);
+  };
 
   return (
     <View style={{ flex: 1 }}>
@@ -90,9 +112,9 @@ export default function TabLayout() {
       </Appbar.Header>
       <BottomNavigation
         navigationState={{ index, routes }}
-        onIndexChange={setIndex}
+        onIndexChange={handleIndexChange}
         renderScene={renderScene}
-        shifting={false} // True for shifting animation, and false for fixed tabs
+        shifting={false}
         barStyle={{ backgroundColor: paperTheme.colors.elevation.level2 }}
         activeColor={Colors[colorScheme].tint}
         inactiveColor={Colors[colorScheme].tabIconDefault}
@@ -103,5 +125,13 @@ export default function TabLayout() {
         )}
       />
     </View>
+  );
+}
+
+export default function TabLayout() {
+  return (
+    <GeneratorProvider>
+      <TabLayoutContent />
+    </GeneratorProvider>
   );
 }

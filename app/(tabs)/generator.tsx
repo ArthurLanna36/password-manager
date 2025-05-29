@@ -2,11 +2,11 @@
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
+import { useGeneratorContext } from "@/contexts/GeneratorContext"; // Ensure path is correct
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { Feather } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
-import { useFocusEffect } from "expo-router";
-import React, { useCallback, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   SafeAreaView,
@@ -35,15 +35,35 @@ export default function GeneratorScreen() {
   const [generatedPassword, setGeneratedPassword] = useState("");
   const [isDialogVisible, setIsDialogVisible] = useState(false);
 
-  useFocusEffect(
-    useCallback(() => {
-      setGeneratedPassword("");
+  const { needsClear, setNeedsClear, setClearPasswordAction } =
+    useGeneratorContext();
 
-      return () => {
-        setGeneratedPassword("");
-      };
-    }, [])
-  );
+  const performClearPassword = () => {
+    setGeneratedPassword("");
+  };
+
+  // Register the clear password action with the context
+  useEffect(() => {
+    setClearPasswordAction(() => performClearPassword);
+    // Cleanup on unmount
+    return () => {
+      setClearPasswordAction(undefined);
+    };
+  }, [setClearPasswordAction]); // Dependency on setClearPasswordAction to avoid stale closures if it were to change
+
+  // Effect to clear password if the context signals it (fallback mechanism)
+  useEffect(() => {
+    if (needsClear) {
+      performClearPassword();
+      setNeedsClear(false); // Reset the flag
+    }
+  }, [needsClear, setNeedsClear]);
+
+  // Initial clear when the component mounts or focuses,
+  // ensuring a clean state if the tab was previously unfocused.
+  useEffect(() => {
+    performClearPassword();
+  }, []); // Empty dependency array means this runs once on mount.
 
   const handleGeneratePassword = () => {
     const charsetParts = [];
