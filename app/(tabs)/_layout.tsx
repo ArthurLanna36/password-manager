@@ -2,10 +2,11 @@
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
-import { View } from "react-native";
+import { Appearance, View } from "react-native"; // Import Appearance
 import {
   Appbar,
   BottomNavigation,
+  Divider,
   Menu,
   Text as PaperText,
   useTheme,
@@ -26,8 +27,8 @@ import { useColorScheme } from "@/hooks/useColorScheme";
 // Inner component to access context within the provider's scope
 function TabLayoutContent() {
   const router = useRouter();
-  const colorScheme = useColorScheme() ?? "light";
-  const paperTheme = useTheme();
+  let colorScheme = useColorScheme() ?? "light"; // Use let for reassignment if needed by toggle
+  const paperTheme = useTheme(); // This hook will give theme based on PaperProvider
   const [index, setIndex] = useState(0);
   const [settingsMenuVisible, setSettingsMenuVisible] = useState(false);
 
@@ -40,6 +41,14 @@ function TabLayoutContent() {
     closeSettingsMenu();
     await supabase.auth.signOut();
     router.replace("/login-page");
+  };
+
+  const toggleTheme = () => {
+    closeSettingsMenu();
+    const nextColorScheme = colorScheme === "dark" ? "light" : "dark";
+    Appearance.setColorScheme(nextColorScheme);
+    // Note: The component might need to re-render for `colorScheme` variable to update.
+    // `useColorScheme()` hook should trigger a re-render in components using it.
   };
 
   const [routes] = useState([
@@ -99,6 +108,11 @@ function TabLayoutContent() {
     setIndex(newIndex);
   };
 
+  // Get the current theme's text color for menu items
+  const menuTextColor = Colors[colorScheme].text;
+  const logoutColor =
+    Colors[colorScheme].tint === Colors.dark.tint ? "#FF6B6B" : "#D32F2F"; // Softer red for dark, stronger for light
+
   return (
     <View style={{ flex: 1 }}>
       <Appbar.Header
@@ -118,11 +132,33 @@ function TabLayoutContent() {
               onPress={openSettingsMenu}
             />
           }
+          // ContentStyle might be needed if menu background needs to match app background
+          // contentStyle={{ backgroundColor: paperTheme.colors.background }}
         >
+          <Menu.Item
+            onPress={toggleTheme}
+            title={`Switch to ${
+              colorScheme === "dark" ? "Light" : "Dark"
+            } Mode`}
+            leadingIcon={(
+              { size } // color prop is provided by Menu.Item, we use dynamic color
+            ) => (
+              <Feather
+                name={colorScheme === "dark" ? "sun" : "moon"}
+                size={size}
+                color={menuTextColor}
+              />
+            )}
+            titleStyle={{ color: menuTextColor }}
+          />
+          <Divider />
           <Menu.Item
             onPress={handleLogout}
             title="Logout"
-            leadingIcon="logout"
+            leadingIcon={({ size }) => (
+              <Feather name="log-out" size={size} color={logoutColor} />
+            )}
+            titleStyle={{ color: logoutColor }}
           />
         </Menu>
       </Appbar.Header>
