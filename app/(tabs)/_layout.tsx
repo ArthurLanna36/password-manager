@@ -6,6 +6,7 @@ import { View } from "react-native";
 import {
   Appbar,
   BottomNavigation,
+  Menu,
   Text as PaperText,
   useTheme,
 } from "react-native-paper";
@@ -19,7 +20,7 @@ import { supabase } from "@/constants/supabase";
 import {
   GeneratorProvider,
   useGeneratorContext,
-} from "@/contexts/GeneratorContext"; // Ensure path is correct
+} from "@/contexts/GeneratorContext";
 import { useColorScheme } from "@/hooks/useColorScheme";
 
 // Inner component to access context within the provider's scope
@@ -28,10 +29,15 @@ function TabLayoutContent() {
   const colorScheme = useColorScheme() ?? "light";
   const paperTheme = useTheme();
   const [index, setIndex] = useState(0);
+  const [settingsMenuVisible, setSettingsMenuVisible] = useState(false);
 
   const { setNeedsClear, clearPasswordAction } = useGeneratorContext();
 
+  const openSettingsMenu = () => setSettingsMenuVisible(true);
+  const closeSettingsMenu = () => setSettingsMenuVisible(false);
+
   const handleLogout = async () => {
+    closeSettingsMenu();
     await supabase.auth.signOut();
     router.replace("/login-page");
   };
@@ -83,12 +89,10 @@ function TabLayoutContent() {
 
   const handleIndexChange = (newIndex: number) => {
     const previousRouteKey = routes[index].key;
-    // If previously on the generator tab and navigating away
     if (previousRouteKey === generatorRouteKey && newIndex !== index) {
       if (clearPasswordAction) {
-        clearPasswordAction(); // Directly call the clear action from GeneratorScreen
+        clearPasswordAction();
       } else {
-        // Fallback in case the action is not yet registered
         setNeedsClear(true);
       }
     }
@@ -104,11 +108,23 @@ function TabLayoutContent() {
           title={currentRouteTitle}
           titleStyle={{ color: Colors[colorScheme].text }}
         />
-        <Appbar.Action
-          icon="logout"
-          onPress={handleLogout}
-          color={Colors[colorScheme].tint}
-        />
+        <Menu
+          visible={settingsMenuVisible}
+          onDismiss={closeSettingsMenu}
+          anchor={
+            <Appbar.Action
+              icon="cog"
+              color={Colors[colorScheme].tint}
+              onPress={openSettingsMenu}
+            />
+          }
+        >
+          <Menu.Item
+            onPress={handleLogout}
+            title="Logout"
+            leadingIcon="logout"
+          />
+        </Menu>
       </Appbar.Header>
       <BottomNavigation
         navigationState={{ index, routes }}
