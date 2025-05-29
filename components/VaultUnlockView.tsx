@@ -3,7 +3,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
-import React from "react";
+import React, { useState } from "react"; // Adicionado useState
 import {
   ActivityIndicator,
   Keyboard,
@@ -12,13 +12,18 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from "react-native";
+// Importações do react-native-paper
+import {
+  Dialog,
+  Button as PaperButton,
+  Text as PaperText,
+  Portal,
+} from "react-native-paper";
 
-// Props for the VaultUnlockView component
 interface VaultUnlockViewProps {
   masterPasswordInput: string;
   setMasterPasswordInput: (password: string) => void;
-  // Ensure this matches the return type of the function being passed
-  handleUnlockVault: () => Promise<boolean>; // Changed from Promise<void>
+  handleUnlockVault: () => Promise<boolean>;
   isLoading: boolean;
 }
 
@@ -29,8 +34,8 @@ export function VaultUnlockView({
   isLoading,
 }: VaultUnlockViewProps) {
   const colorScheme = useColorScheme() ?? "light";
+  const [isDialogVisible, setIsDialogVisible] = useState(false); // Estado para controlar a visibilidade do Dialog
 
-  // Styles that depend on the color scheme
   const themedInputStyle = [
     styles.input,
     {
@@ -53,11 +58,16 @@ export function VaultUnlockView({
     { color: Colors[colorScheme].background },
   ];
 
-  // Function to handle submission and dismiss keyboard
   const onSubmitEditing = async () => {
-    Keyboard.dismiss(); // Dismiss keyboard
-    await handleUnlockVault(); // Call the unlock function
+    Keyboard.dismiss();
+    if (!masterPasswordInput.trim()) {
+      setIsDialogVisible(true); // Mostra o Dialog se a senha estiver vazia
+    } else {
+      await handleUnlockVault();
+    }
   };
+
+  const hideDialog = () => setIsDialogVisible(false);
 
   return (
     <ThemedView style={[styles.container, styles.formContainer]}>
@@ -69,12 +79,12 @@ export function VaultUnlockView({
         secureTextEntry
         value={masterPasswordInput}
         onChangeText={setMasterPasswordInput}
-        onSubmitEditing={onSubmitEditing}
+        onSubmitEditing={onSubmitEditing} // Mantido para submissão via teclado
         autoCapitalize="none"
       />
       <TouchableOpacity
         style={themedButtonStyle}
-        onPress={onSubmitEditing}
+        onPress={onSubmitEditing} // O botão também chamará onSubmitEditing
         disabled={isLoading}
       >
         {isLoading ? (
@@ -83,11 +93,31 @@ export function VaultUnlockView({
           <ThemedText style={themedButtonTextStyle}>Unlock</ThemedText>
         )}
       </TouchableOpacity>
+
+      <Portal>
+        <Dialog visible={isDialogVisible} onDismiss={hideDialog}>
+          <Dialog.Title style={{ color: Colors[colorScheme].text }}>
+            Error
+          </Dialog.Title>
+          <Dialog.Content>
+            <PaperText style={{ color: Colors[colorScheme].text }}>
+              Please enter your master password.
+            </PaperText>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <PaperButton
+              onPress={hideDialog}
+              textColor={Colors[colorScheme].tint}
+            >
+              OK
+            </PaperButton>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </ThemedView>
   );
 }
 
-// Styles for the VaultUnlockView component
 const styles = StyleSheet.create({
   container: {
     flex: 1,

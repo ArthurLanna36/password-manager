@@ -1,13 +1,13 @@
 // app/(tabs)/generator.tsx
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
-import { Feather } from "@expo/vector-icons";
-import { useFocusEffect } from "expo-router"; // Importar useFocusEffect
-import React, { useCallback, useState } from "react"; // Adicionar useCallback
+import { ThemedText } from "@/components/ThemedText"; //
+import { ThemedView } from "@/components/ThemedView"; //
+import { Colors } from "@/constants/Colors"; //
+import { useColorScheme } from "@/hooks/useColorScheme"; //
+import { Feather } from "@expo/vector-icons"; //
+import { useFocusEffect } from "expo-router";
+import React, { useCallback, useState } from "react";
 import {
-  Alert,
+  // Alert, // Alert não é mais necessário para este caso específico
   Clipboard,
   Platform,
   SafeAreaView,
@@ -19,103 +19,109 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+// Importações do react-native-paper
+import {
+  Dialog,
+  Button as PaperButton,
+  Text as PaperText,
+  Portal,
+} from "react-native-paper";
 
 export default function GeneratorScreen() {
-  const colorScheme = useColorScheme() ?? "light";
-  const [passwordLength, setPasswordLength] = useState(12);
-  const [includeUppercase, setIncludeUppercase] = useState(true);
-  const [includeLowercase, setIncludeLowercase] = useState(true);
-  const [includeNumbers, setIncludeNumbers] = useState(true);
-  const [includeSpecialChars, setIncludeSpecialChars] = useState(true);
-  const [generatedPassword, setGeneratedPassword] = useState("");
+  const colorScheme = useColorScheme() ?? "light"; //
+  const [passwordLength, setPasswordLength] = useState(12); //
+  const [includeUppercase, setIncludeUppercase] = useState(true); //
+  const [includeLowercase, setIncludeLowercase] = useState(true); //
+  const [includeNumbers, setIncludeNumbers] = useState(true); //
+  const [includeSpecialChars, setIncludeSpecialChars] = useState(true); //
+  const [generatedPassword, setGeneratedPassword] = useState(""); //
+  const [isDialogVisible, setIsDialogVisible] = useState(false); // Novo estado para o Dialog
 
-  // Limpar a senha gerada toda vez que a tela ganhar foco
   useFocusEffect(
     useCallback(() => {
-      setGeneratedPassword("");
-      return () => {
-        // Opcional: pode adicionar lógica de limpeza se necessário ao sair da tela,
-        // mas para este caso, apenas limpar ao entrar é suficiente.
-      };
+      setGeneratedPassword(""); //
+      return () => {};
     }, [])
   );
 
   const handleGeneratePassword = () => {
+    //
     const charset = [];
-    if (includeUppercase) charset.push("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-    if (includeLowercase) charset.push("abcdefghijklmnopqrstuvwxyz");
-    if (includeNumbers) charset.push("0123456789");
-    if (includeSpecialChars) charset.push("!@#$%^&*()_+-=[]{}|;:',.<>?");
+    if (includeUppercase) charset.push("ABCDEFGHIJKLMNOPQRSTUVWXYZ"); //
+    if (includeLowercase) charset.push("abcdefghijklmnopqrstuvwxyz"); //
+    if (includeNumbers) charset.push("0123456789"); //
+    if (includeSpecialChars) charset.push("!@#$%^&*()_+-=[]{}|;:',.<>?"); //
 
     if (charset.length === 0) {
-      Alert.alert(
-        "Erro",
-        "Selecione ao menos um tipo de caractere para gerar a senha."
-      );
-      setGeneratedPassword("");
+      // Em vez de Alert.alert, mostramos o Dialog
+      setIsDialogVisible(true); //
+      setGeneratedPassword(""); //
       return;
     }
 
-    let newPassword = "";
-    const fullCharset = charset.join("");
+    let newPassword = ""; //
+    const fullCharset = charset.join(""); //
 
     for (let i = 0; i < passwordLength; i++) {
-      const randomIndex = Math.floor(Math.random() * fullCharset.length);
-      newPassword += fullCharset[randomIndex];
+      const randomIndex = Math.floor(Math.random() * fullCharset.length); //
+      newPassword += fullCharset[randomIndex]; //
     }
-    setGeneratedPassword(newPassword);
+    setGeneratedPassword(newPassword); //
   };
 
+  const hideDialog = () => setIsDialogVisible(false);
+
   const copyToClipboard = async () => {
+    //
     if (generatedPassword) {
-      // No seu hook usePasswordManager, você usa Clipboard de 'expo-clipboard'.
-      // Para consistência, e assumindo que 'expo-clipboard' está instalado e configurado:
-      // import * as Clipboard from 'expo-clipboard'; // Se não estiver já importado assim
-      // await Clipboard.setStringAsync(generatedPassword);
-      // Se estiver usando o Clipboard legado de 'react-native' (como na importação atual):
-      Clipboard.setString(generatedPassword);
+      Clipboard.setString(generatedPassword); //
+      // Alert.alert("Copiado!", "Senha copiada para a área de transferência."); // Você pode querer mudar isso também
+      // Por exemplo, para um Snackbar do react-native-paper ou manter o Alert por enquanto
+      // Para manter simples por agora, vamos manter o Alert para o feedback de cópia.
       Alert.alert("Copiado!", "Senha copiada para a área de transferência.");
     }
   };
 
   const incrementLength = () =>
-    setPasswordLength((prev) => Math.min(prev + 1, 128));
+    setPasswordLength((prev) => Math.min(prev + 1, 128)); //
   const decrementLength = () =>
-    setPasswordLength((prev) => Math.max(prev - 1, 4));
+    setPasswordLength((prev) => Math.max(prev - 1, 4)); //
 
   const dynamicStyles = {
+    //
     container: {
-      backgroundColor: Colors[colorScheme].background,
+      backgroundColor: Colors[colorScheme].background, //
     },
     sectionTitle: {
-      color: Colors[colorScheme].text,
+      color: Colors[colorScheme].text, //
     },
     optionText: {
-      color: Colors[colorScheme].text,
+      color: Colors[colorScheme].text, //
     },
     lengthValueText: {
-      color: Colors[colorScheme].text,
+      color: Colors[colorScheme].text, //
     },
     generatedPasswordInput: {
-      borderColor: Colors[colorScheme].icon,
-      color: Colors[colorScheme].text,
-      backgroundColor: Colors[colorScheme].background,
+      borderColor: Colors[colorScheme].icon, //
+      color: Colors[colorScheme].text, //
+      backgroundColor: Colors[colorScheme].background, //
     },
     button: {
-      backgroundColor: Colors[colorScheme].tint,
+      backgroundColor: Colors[colorScheme].tint, //
     },
     buttonText: {
-      color: Colors[colorScheme].background,
+      color: Colors[colorScheme].background, //
     },
-    iconColor: Colors[colorScheme].tint,
+    iconColor: Colors[colorScheme].tint, //
     switchThumbColor:
-      Platform.OS === "android" ? Colors[colorScheme].tint : undefined,
+      Platform.OS === "android" ? Colors[colorScheme].tint : undefined, //
     switchTrackColor: {
-      false: Colors[colorScheme].icon,
-      true: Colors[colorScheme].tint,
+      //
+      false: Colors[colorScheme].icon, //
+      true: Colors[colorScheme].tint, //
     },
     lengthButton: {
-      borderColor: Colors[colorScheme].tint,
+      borderColor: Colors[colorScheme].tint, //
     },
   };
 
@@ -126,6 +132,7 @@ export default function GeneratorScreen() {
         contentContainerStyle={styles.contentContainer}
         keyboardShouldPersistTaps="handled"
       >
+        {/* ... (conteúdo existente do ScrollView, como os cards e opções) ... */}
         <ThemedView style={styles.card}>
           <ThemedText style={[styles.sectionTitle, dynamicStyles.sectionTitle]}>
             Comprimento da senha
@@ -209,7 +216,7 @@ export default function GeneratorScreen() {
           </TouchableOpacity>
         </ThemedView>
 
-        {generatedPassword ? ( // Apenas mostra este card se uma senha foi gerada
+        {generatedPassword ? (
           <ThemedView style={styles.card}>
             <ThemedText
               style={[styles.sectionTitle, dynamicStyles.sectionTitle]}
@@ -224,7 +231,6 @@ export default function GeneratorScreen() {
                 ]}
                 value={generatedPassword}
                 editable={false}
-                // Não precisa mais do placeholder aqui se o campo só aparece quando tem senha
               />
               <TouchableOpacity
                 onPress={copyToClipboard}
@@ -240,12 +246,33 @@ export default function GeneratorScreen() {
           </ThemedView>
         ) : null}
       </ScrollView>
+
+      <Portal>
+        <Dialog visible={isDialogVisible} onDismiss={hideDialog}>
+          <Dialog.Title style={{ color: Colors[colorScheme].text }}>
+            Erro
+          </Dialog.Title>
+          <Dialog.Content>
+            <PaperText style={{ color: Colors[colorScheme].text }}>
+              Selecione ao menos um tipo de caractere para gerar a senha.
+            </PaperText>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <PaperButton
+              onPress={hideDialog}
+              textColor={Colors[colorScheme].tint}
+            >
+              OK
+            </PaperButton>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </SafeAreaView>
   );
 }
 
-// ... (o restante do código de estilos permanece o mesmo)
 const styles = StyleSheet.create({
+  //
   safeArea: {
     flex: 1,
   },
