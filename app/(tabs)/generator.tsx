@@ -2,13 +2,12 @@
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
-import { useGeneratorContext } from "@/contexts/GeneratorContext"; // Ensure path is correct
+import { useGeneratorContext } from "@/contexts/GeneratorContext";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { Feather } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
 import React, { useEffect, useState } from "react";
 import {
-  Alert,
   SafeAreaView,
   ScrollView,
   Text,
@@ -33,7 +32,8 @@ export default function GeneratorScreen() {
   const [includeNumbers, setIncludeNumbers] = useState(true);
   const [includeSpecialChars, setIncludeSpecialChars] = useState(true);
   const [generatedPassword, setGeneratedPassword] = useState("");
-  const [isDialogVisible, setIsDialogVisible] = useState(false);
+  const [isErrorDialogVisible, setIsErrorDialogVisible] = useState(false); // For error messages
+  const [isCopyDialogVisible, setIsCopyDialogVisible] = useState(false); // For copy confirmation
 
   const { needsClear, setNeedsClear, setClearPasswordAction } =
     useGeneratorContext();
@@ -49,9 +49,9 @@ export default function GeneratorScreen() {
     return () => {
       setClearPasswordAction(undefined);
     };
-  }, [setClearPasswordAction]); // Dependency on setClearPasswordAction to avoid stale closures if it were to change
+  }, [setClearPasswordAction]);
 
-  // Effect to clear password if the context signals it (fallback mechanism)
+  // Effect to clear password if the context signals it
   useEffect(() => {
     if (needsClear) {
       performClearPassword();
@@ -59,11 +59,10 @@ export default function GeneratorScreen() {
     }
   }, [needsClear, setNeedsClear]);
 
-  // Initial clear when the component mounts or focuses,
-  // ensuring a clean state if the tab was previously unfocused.
+  // Initial clear when the component mounts
   useEffect(() => {
     performClearPassword();
-  }, []); // Empty dependency array means this runs once on mount.
+  }, []);
 
   const handleGeneratePassword = () => {
     const charsetParts = [];
@@ -73,7 +72,7 @@ export default function GeneratorScreen() {
     if (includeSpecialChars) charsetParts.push("!@#$%^&*()_+-=[]{}|;:',.<>?");
 
     if (charsetParts.length === 0) {
-      setIsDialogVisible(true);
+      setIsErrorDialogVisible(true); // Show error dialog
       setGeneratedPassword("");
       return;
     }
@@ -88,11 +87,13 @@ export default function GeneratorScreen() {
     setGeneratedPassword(newPassword);
   };
 
-  const hideDialog = () => setIsDialogVisible(false);
+  const hideErrorDialog = () => setIsErrorDialogVisible(false);
+  const hideCopyDialog = () => setIsCopyDialogVisible(false);
 
   const copyToClipboard = async (text: string) => {
+    if (!text) return;
     await Clipboard.setStringAsync(text);
-    Alert.alert("Copied!", "Password copied to clipboard.");
+    setIsCopyDialogVisible(true); // Show copy confirmation dialog
   };
 
   const incrementLength = () =>
@@ -129,6 +130,18 @@ export default function GeneratorScreen() {
     checkboxUncheckedColor: Colors[colorScheme].icon,
     checkboxLabelStyle: {
       color: Colors[colorScheme].text,
+    },
+    dialogTitle: {
+      // Added for dialog title consistency
+      color: Colors[colorScheme].text,
+    },
+    dialogContentText: {
+      // Added for dialog content text consistency
+      color: Colors[colorScheme].text,
+    },
+    dialogButtonText: {
+      // Added for dialog button text consistency
+      color: Colors[colorScheme].tint,
     },
   };
 
@@ -259,20 +272,37 @@ export default function GeneratorScreen() {
       </ScrollView>
 
       <Portal>
-        <Dialog visible={isDialogVisible} onDismiss={hideDialog}>
-          <Dialog.Title style={{ color: Colors[colorScheme].text }}>
-            Error
-          </Dialog.Title>
+        {/* Error Dialog */}
+        <Dialog visible={isErrorDialogVisible} onDismiss={hideErrorDialog}>
+          <Dialog.Title style={dynamicStyles.dialogTitle}>Error</Dialog.Title>
           <Dialog.Content>
-            <PaperText style={{ color: Colors[colorScheme].text }}>
+            <PaperText style={dynamicStyles.dialogContentText}>
               Please select at least one character type to generate the
               password.
             </PaperText>
           </Dialog.Content>
           <Dialog.Actions>
             <PaperButton
-              onPress={hideDialog}
-              textColor={Colors[colorScheme].tint}
+              onPress={hideErrorDialog}
+              textColor={dynamicStyles.dialogButtonText.color}
+            >
+              OK
+            </PaperButton>
+          </Dialog.Actions>
+        </Dialog>
+
+        {/* Copy Confirmation Dialog */}
+        <Dialog visible={isCopyDialogVisible} onDismiss={hideCopyDialog}>
+          <Dialog.Title style={dynamicStyles.dialogTitle}>Copied!</Dialog.Title>
+          <Dialog.Content>
+            <PaperText style={dynamicStyles.dialogContentText}>
+              Password copied to clipboard.
+            </PaperText>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <PaperButton
+              onPress={hideCopyDialog}
+              textColor={dynamicStyles.dialogButtonText.color}
             >
               OK
             </PaperButton>
