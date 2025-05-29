@@ -1,26 +1,26 @@
 // app/_layout.tsx
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
-  DarkTheme as NavigationDarkTheme, // Renomeado para clareza
-  DefaultTheme as NavigationDefaultTheme, // Renomeado para clareza
+  DarkTheme as NavigationDarkTheme,
+  DefaultTheme as NavigationDefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
 import { Session } from "@supabase/supabase-js";
 import { useFonts } from "expo-font";
 import { Stack, useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
-import { ActivityIndicator, View } from "react-native";
-import {
-  MD3DarkTheme, // Importe o tema escuro MD3 do Paper
-  MD3LightTheme, // Importe o tema claro MD3 do Paper
-  PaperProvider,
-} from "react-native-paper"; // PaperProvider já estava importado
+import React, { useEffect, useRef, useState } from "react";
+import { ActivityIndicator, AppState, View } from "react-native";
+import { MD3DarkTheme, MD3LightTheme, PaperProvider } from "react-native-paper";
 
-import { supabase } from "@/constants/supabase"; //
-import { useColorScheme } from "@/hooks/useColorScheme"; //
+import { supabase } from "@/constants/supabase";
+import { useColorScheme } from "@/hooks/useColorScheme";
+
+const KEEP_ME_SIGNED_IN_KEY = "keepMeSignedInPreference";
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme(); //
+  const colorScheme = useColorScheme() ?? "dark"; // Default to dark if system preference is null
   const router = useRouter();
+  const appState = useRef(AppState.currentState);
 
   const [fontsLoaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
@@ -29,27 +29,68 @@ export default function RootLayout() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      //
-      setSession(session);
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      setSession(currentSession);
       setLoading(false);
     });
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_, s) => {
-      //
-      setSession(s);
-    });
-    return () => sub.subscription.unsubscribe();
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (_event, newSession) => {
+        setSession(newSession);
+      }
+    );
+
+    const subscription = AppState.addEventListener(
+      "change",
+      async (nextAppState) => {
+        // Listener function is now async
+        if (
+          appState.current === "active" &&
+          nextAppState.match(/inactive|background/)
+        ) {
+          // App has gone to the background
+          try {
+            const keepSignedInPref = await AsyncStorage.getItem(
+              KEEP_ME_SIGNED_IN_KEY
+            );
+            // Default to true (keep signed in) if preference is not explicitly set to false
+            const shouldKeepSignedIn =
+              keepSignedInPref !== null ? JSON.parse(keepSignedInPref) : true;
+
+            if (!shouldKeepSignedIn) {
+              const {
+                data: { session: activeSession },
+              } = await supabase.auth.getSession(); // Await the session
+              if (activeSession) {
+                // Only sign out if there is an active session
+                await supabase.auth.signOut();
+                // console.log("User signed out due to 'Keep me signed in' preference on backgrounding.");
+              }
+            }
+          } catch (e) {
+            console.error(
+              "Failed to read or handle keepMeSignedIn preference on backgrounding.",
+              e
+            );
+          }
+        }
+        appState.current = nextAppState;
+      }
+    );
+
+    return () => {
+      authListener.subscription.unsubscribe();
+      subscription.remove();
+    };
   }, []);
 
   useEffect(() => {
     if (!loading && !session) {
-      router.replace("/login-page"); //
+      router.replace("/login-page");
     }
-  }, [loading, session]);
+  }, [loading, session, router]);
 
   if (!fontsLoaded || loading) {
-    //
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
         <ActivityIndicator size="large" />
@@ -57,20 +98,13 @@ export default function RootLayout() {
     );
   }
 
-  // Seleciona o tema correto para o PaperProvider
-  const paperTheme = colorScheme === "dark" ? MD3DarkTheme : MD3LightTheme;
-
-  // Seleciona o tema correto para o ThemeProvider do React Navigation
-  const navigationTheme =
+  const paperThemeToUse = colorScheme === "dark" ? MD3DarkTheme : MD3LightTheme;
+  const navigationThemeToUse =
     colorScheme === "dark" ? NavigationDarkTheme : NavigationDefaultTheme;
 
   return (
-    <PaperProvider theme={paperTheme}>
-      {" "}
-      {/* Use o tema do Paper aqui */}
-      <ThemeProvider value={navigationTheme}>
-        {" "}
-        {/* Use o tema do Navigation aqui */}
+    <PaperProvider theme={paperThemeToUse}>
+      <ThemeProvider value={navigationThemeToUse}>
         <Stack>
           {session ? (
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
