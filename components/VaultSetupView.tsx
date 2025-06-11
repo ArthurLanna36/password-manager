@@ -1,26 +1,22 @@
 // components/VaultSetupView.tsx
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
-import React from "react";
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   Keyboard,
-  Platform,
-  TextInput as RNTextInput,
   StyleSheet,
   TouchableOpacity,
 } from "react-native";
+// 1. Import TextInput from react-native-paper
+import { TextInput } from "react-native-paper";
 
-// Props for the VaultSetupView component
 interface VaultSetupViewProps {
   setupMasterPassword: string;
   setSetupMasterPassword: (password: string) => void;
   confirmSetupMasterPassword: string;
   setConfirmSetupMasterPassword: (password: string) => void;
-  // Corrected the return type here
-  handleSetupVault: () => Promise<boolean>; // Changed from Promise<void>
+  handleSetupVault: () => Promise<boolean>;
   isLoading: boolean;
 }
 
@@ -32,33 +28,14 @@ export function VaultSetupView({
   handleSetupVault,
   isLoading,
 }: VaultSetupViewProps) {
-  const colorScheme = useColorScheme() ?? "light";
-
-  const themedInputStyle = [
-    styles.input,
-    {
-      borderColor: Colors[colorScheme].icon,
-      color: Colors[colorScheme].text,
-      backgroundColor: Colors[colorScheme].background,
-    },
-  ];
-
-  const themedButtonStyle = [
-    styles.button,
-    {
-      backgroundColor: Colors[colorScheme].tint,
-      marginTop: 20,
-    },
-  ];
-
-  const themedButtonTextStyle = [
-    styles.buttonText,
-    { color: Colors[colorScheme].background },
-  ];
+  // Add state for password visibility
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] =
+    useState(false);
 
   const onSubmitEditing = async () => {
     Keyboard.dismiss();
-    await handleSetupVault(); // Call the setup function
+    await handleSetupVault();
   };
 
   return (
@@ -68,34 +45,48 @@ export function VaultSetupView({
         Create a strong master password. This password will encrypt all your
         other passwords. **Do not forget it, as it cannot be recovered!**
       </ThemedText>
-      <RNTextInput
-        style={themedInputStyle}
-        placeholder="New Master Password"
-        placeholderTextColor={Colors[colorScheme].icon}
-        secureTextEntry
+      {/* 2. Replace RNTextInput with Paper's TextInput */}
+      <TextInput
+        label="New Master Password"
+        style={styles.input}
+        secureTextEntry={!isPasswordVisible}
         value={setupMasterPassword}
         onChangeText={setSetupMasterPassword}
         autoCapitalize="none"
+        // 4. Use the 'right' prop for the icon
+        right={
+          <TextInput.Icon
+            icon={isPasswordVisible ? "eye-off" : "eye"}
+            onPress={() => setIsPasswordVisible(!isPasswordVisible)}
+          />
+        }
       />
-      <RNTextInput
-        style={themedInputStyle}
-        placeholder="Confirm Master Password"
-        placeholderTextColor={Colors[colorScheme].icon}
-        secureTextEntry
+      <TextInput
+        label="Confirm Master Password"
+        style={styles.input}
+        secureTextEntry={!isConfirmPasswordVisible}
         value={confirmSetupMasterPassword}
         onChangeText={setConfirmSetupMasterPassword}
         onSubmitEditing={onSubmitEditing}
         autoCapitalize="none"
+        right={
+          <TextInput.Icon
+            icon={isConfirmPasswordVisible ? "eye-off" : "eye"}
+            onPress={() =>
+              setIsConfirmPasswordVisible(!isConfirmPasswordVisible)
+            }
+          />
+        }
       />
       <TouchableOpacity
-        style={themedButtonStyle}
+        style={[styles.button, { marginTop: 20 }]}
         onPress={onSubmitEditing}
         disabled={isLoading}
       >
         {isLoading ? (
-          <ActivityIndicator color={Colors[colorScheme].background} />
+          <ActivityIndicator color="#fff" />
         ) : (
-          <ThemedText style={themedButtonTextStyle}>
+          <ThemedText style={styles.buttonText}>
             Save and Set Up Vault
           </ThemedText>
         )}
@@ -104,6 +95,7 @@ export function VaultSetupView({
   );
 }
 
+// 5. Simplified styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -112,7 +104,7 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     padding: 20,
-    width: "100%", // Ensure the form container takes full width for centering inputs
+    width: "100%",
   },
   title: {
     fontSize: 24,
@@ -128,16 +120,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   input: {
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 15,
-    paddingVertical: Platform.OS === "ios" ? 15 : 12,
     marginBottom: 15,
-    fontSize: 16,
     width: "90%",
     alignSelf: "center",
   },
   button: {
+    backgroundColor: "#007AFF", // Example color
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: "center",
@@ -145,5 +133,5 @@ const styles = StyleSheet.create({
     width: "90%",
     alignSelf: "center",
   },
-  buttonText: { fontSize: 16, fontWeight: "600" },
+  buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
 });

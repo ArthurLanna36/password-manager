@@ -11,25 +11,28 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TextStyle,
   TouchableOpacity,
   View,
   ViewStyle,
 } from "react-native";
+// 1. Import TextInput from react-native-paper
+import { TextInput } from "react-native-paper";
 
 type Styles = {
   safe: ViewStyle;
   flex: ViewStyle;
   container: ViewStyle;
   title: TextStyle;
-  input: TextStyle;
+  input: TextStyle; // Kept for marginBottom
   button: ViewStyle;
   buttonDisabled: ViewStyle;
   buttonText: TextStyle;
   linkWrapper: ViewStyle;
   link: TextStyle;
 };
+
+// 5. Simplified styles
 const styles = StyleSheet.create<Styles>({
   safe: { flex: 1, backgroundColor: "#000" },
   flex: { flex: 1 },
@@ -48,13 +51,8 @@ const styles = StyleSheet.create<Styles>({
     marginBottom: 32,
   },
   input: {
-    backgroundColor: "#111",
-    color: "#fff",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
     marginBottom: 16,
-    fontSize: 16,
+    backgroundColor: "transparent",
   },
   button: {
     backgroundColor: "#0047AB",
@@ -99,19 +97,19 @@ export default function RegisterPage() {
           keyboardShouldPersistTaps="handled"
         >
           <Text style={styles.title}>Create Account</Text>
+          {/* 2. Replace react-native TextInput with Paper's TextInput */}
+          {/* 3. Change 'placeholder' prop to 'label' */}
           <TextInput
+            label="Email"
             style={styles.input}
-            placeholder="Email"
-            placeholderTextColor="#888"
             autoCapitalize="none"
             keyboardType="email-address"
             value={email}
             onChangeText={setEmail}
           />
           <TextInput
+            label="Password"
             style={styles.input}
-            placeholder="Password"
-            placeholderTextColor="#888"
             secureTextEntry
             value={password}
             onChangeText={setPassword}

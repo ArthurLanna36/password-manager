@@ -3,21 +3,20 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
-import React, { useState } from "react"; // Adicionado useState
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   Keyboard,
-  Platform,
-  TextInput as RNTextInput,
   StyleSheet,
   TouchableOpacity,
 } from "react-native";
-// Importações do react-native-paper
+// 1. Import necessary components from react-native-paper
 import {
   Dialog,
   Button as PaperButton,
   Text as PaperText,
   Portal,
+  TextInput,
 } from "react-native-paper";
 
 interface VaultUnlockViewProps {
@@ -34,22 +33,13 @@ export function VaultUnlockView({
   isLoading,
 }: VaultUnlockViewProps) {
   const colorScheme = useColorScheme() ?? "light";
-  const [isDialogVisible, setIsDialogVisible] = useState(false); // Estado para controlar a visibilidade do Dialog
-
-  const themedInputStyle = [
-    styles.input,
-    {
-      borderColor: Colors[colorScheme].icon,
-      color: Colors[colorScheme].text,
-      backgroundColor: Colors[colorScheme].background,
-    },
-  ];
+  const [isDialogVisible, setIsDialogVisible] = useState(false);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false); // State for password visibility
 
   const themedButtonStyle = [
     styles.button,
     {
       backgroundColor: Colors[colorScheme].tint,
-      marginTop: 20,
     },
   ];
 
@@ -61,7 +51,7 @@ export function VaultUnlockView({
   const onSubmitEditing = async () => {
     Keyboard.dismiss();
     if (!masterPasswordInput.trim()) {
-      setIsDialogVisible(true); // Mostra o Dialog se a senha estiver vazia
+      setIsDialogVisible(true);
     } else {
       await handleUnlockVault();
     }
@@ -72,19 +62,27 @@ export function VaultUnlockView({
   return (
     <ThemedView style={[styles.container, styles.formContainer]}>
       <ThemedText style={styles.title}>Unlock Vault</ThemedText>
-      <RNTextInput
-        style={themedInputStyle}
-        placeholder="Master Password"
-        placeholderTextColor={Colors[colorScheme].icon}
-        secureTextEntry
+      {/* 2. Replaced RNTextInput with Paper's TextInput */}
+      <TextInput
+        label="Master Password"
+        mode="outlined"
+        style={styles.input}
+        secureTextEntry={!isPasswordVisible}
         value={masterPasswordInput}
         onChangeText={setMasterPasswordInput}
-        onSubmitEditing={onSubmitEditing} // Mantido para submissão via teclado
+        onSubmitEditing={onSubmitEditing}
         autoCapitalize="none"
+        // 4. Added right icon for password visibility
+        right={
+          <TextInput.Icon
+            icon={isPasswordVisible ? "eye-off" : "eye"}
+            onPress={() => setIsPasswordVisible(!isPasswordVisible)}
+          />
+        }
       />
       <TouchableOpacity
         style={themedButtonStyle}
-        onPress={onSubmitEditing} // O botão também chamará onSubmitEditing
+        onPress={onSubmitEditing}
         disabled={isLoading}
       >
         {isLoading ? (
@@ -118,6 +116,7 @@ export function VaultUnlockView({
   );
 }
 
+// 5. Simplified styles for the input
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -135,14 +134,9 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   input: {
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 15,
-    paddingVertical: Platform.OS === "ios" ? 15 : 12,
-    marginBottom: 15,
-    fontSize: 16,
     width: "90%",
     alignSelf: "center",
+    marginBottom: 15,
   },
   button: {
     paddingVertical: 14,
@@ -151,6 +145,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     width: "90%",
     alignSelf: "center",
+    marginTop: 20,
   },
   buttonText: { fontSize: 16, fontWeight: "600" },
 });

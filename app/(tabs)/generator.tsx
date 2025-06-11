@@ -11,7 +11,6 @@ import {
   SafeAreaView,
   ScrollView,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -21,45 +20,46 @@ import {
   Button as PaperButton,
   Text as PaperText,
   Portal,
+  // 1. Import TextInput from react-native-paper
+  TextInput,
 } from "react-native-paper";
 import { styles } from "./styles/generator.styles";
 
 export default function GeneratorScreen() {
   const colorScheme = useColorScheme() ?? "light";
+  // ... (rest of the state remains the same)
   const [passwordLength, setPasswordLength] = useState(25);
   const [includeUppercase, setIncludeUppercase] = useState(true);
   const [includeLowercase, setIncludeLowercase] = useState(true);
   const [includeNumbers, setIncludeNumbers] = useState(true);
   const [includeSpecialChars, setIncludeSpecialChars] = useState(true);
   const [generatedPassword, setGeneratedPassword] = useState("");
-  const [isErrorDialogVisible, setIsErrorDialogVisible] = useState(false); // For error messages
-  const [isCopyDialogVisible, setIsCopyDialogVisible] = useState(false); // For copy confirmation
+  const [isErrorDialogVisible, setIsErrorDialogVisible] = useState(false);
+  const [isCopyDialogVisible, setIsCopyDialogVisible] = useState(false);
 
   const { needsClear, setNeedsClear, setClearPasswordAction } =
     useGeneratorContext();
+
+  // ... (rest of the functions and effects remain the same)
 
   const performClearPassword = () => {
     setGeneratedPassword("");
   };
 
-  // Register the clear password action with the context
   useEffect(() => {
     setClearPasswordAction(() => performClearPassword);
-    // Cleanup on unmount
     return () => {
       setClearPasswordAction(undefined);
     };
   }, [setClearPasswordAction]);
 
-  // Effect to clear password if the context signals it
   useEffect(() => {
     if (needsClear) {
       performClearPassword();
-      setNeedsClear(false); // Reset the flag
+      setNeedsClear(false);
     }
   }, [needsClear, setNeedsClear]);
 
-  // Initial clear when the component mounts
   useEffect(() => {
     performClearPassword();
   }, []);
@@ -72,7 +72,7 @@ export default function GeneratorScreen() {
     if (includeSpecialChars) charsetParts.push("!@#$%^&*()_+-=[]{}|;:',.<>?");
 
     if (charsetParts.length === 0) {
-      setIsErrorDialogVisible(true); // Show error dialog
+      setIsErrorDialogVisible(true);
       setGeneratedPassword("");
       return;
     }
@@ -93,7 +93,7 @@ export default function GeneratorScreen() {
   const copyToClipboard = async (text: string) => {
     if (!text) return;
     await Clipboard.setStringAsync(text);
-    setIsCopyDialogVisible(true); // Show copy confirmation dialog
+    setIsCopyDialogVisible(true);
   };
 
   const incrementLength = () =>
@@ -101,6 +101,7 @@ export default function GeneratorScreen() {
   const decrementLength = () =>
     setPasswordLength((prev) => Math.max(prev - 1, 4));
 
+  // ... (dynamic styles object remains the same)
   const dynamicStyles = {
     container: {
       backgroundColor: Colors[colorScheme].background,
@@ -112,9 +113,9 @@ export default function GeneratorScreen() {
       color: Colors[colorScheme].text,
     },
     generatedPasswordInput: {
-      borderColor: Colors[colorScheme].icon,
-      color: Colors[colorScheme].text,
-      backgroundColor: Colors[colorScheme].background,
+      // Styles for the container of the Paper TextInput
+      flex: 1,
+      marginRight: 10,
     },
     button: {
       backgroundColor: Colors[colorScheme].tint,
@@ -132,15 +133,12 @@ export default function GeneratorScreen() {
       color: Colors[colorScheme].text,
     },
     dialogTitle: {
-      // Added for dialog title consistency
       color: Colors[colorScheme].text,
     },
     dialogContentText: {
-      // Added for dialog content text consistency
       color: Colors[colorScheme].text,
     },
     dialogButtonText: {
-      // Added for dialog button text consistency
       color: Colors[colorScheme].tint,
     },
   };
@@ -179,6 +177,7 @@ export default function GeneratorScreen() {
         contentContainerStyle={styles.contentContainer}
         keyboardShouldPersistTaps="handled"
       >
+        {/* ... (Password Length and Checkbox sections remain the same) ... */}
         <ThemedView style={styles.card}>
           <ThemedText style={[styles.sectionTitle, dynamicStyles.sectionTitle]}>
             Password Length
@@ -248,29 +247,26 @@ export default function GeneratorScreen() {
               Generated Password
             </ThemedText>
             <View style={styles.generatedPasswordContainer}>
+              {/* 2. Replace TextInput here */}
               <TextInput
-                style={[
-                  styles.generatedPasswordInput,
-                  dynamicStyles.generatedPasswordInput,
-                ]}
+                mode="outlined"
+                style={dynamicStyles.generatedPasswordInput}
                 value={generatedPassword}
                 editable={false}
+                // 4. Use the 'right' prop for the copy icon
+                right={
+                  <TextInput.Icon
+                    icon="content-copy"
+                    onPress={() => copyToClipboard(generatedPassword)}
+                  />
+                }
               />
-              <TouchableOpacity
-                onPress={() => copyToClipboard(generatedPassword)}
-                style={styles.copyButton}
-              >
-                <Feather
-                  name="copy"
-                  size={24}
-                  color={dynamicStyles.iconColor}
-                />
-              </TouchableOpacity>
             </View>
           </ThemedView>
         ) : null}
       </ScrollView>
 
+      {/* ... (Portal and Dialogs remain the same) ... */}
       <Portal>
         {/* Error Dialog */}
         <Dialog visible={isErrorDialogVisible} onDismiss={hideErrorDialog}>

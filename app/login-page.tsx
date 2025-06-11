@@ -14,32 +14,32 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
-  TextStyle, // Import TextStyle
+  TextStyle,
   TouchableOpacity,
   View,
-  ViewStyle, // Import ViewStyle
+  ViewStyle,
 } from "react-native";
-import { Checkbox } from "react-native-paper";
+// 1. Import TextInput and Checkbox from react-native-paper
+import { Checkbox, TextInput } from "react-native-paper";
 
 const KEEP_ME_SIGNED_IN_KEY = "keepMeSignedInPreference";
 
-// Define the Styles type for your StyleSheet
 type Styles = {
   safe: ViewStyle;
   flex: ViewStyle;
   container: ViewStyle;
   title: TextStyle;
-  input: TextStyle;
+  input: TextStyle; // Kept for marginBottom
   button: ViewStyle;
   buttonDisabled: ViewStyle;
   buttonText: TextStyle;
   linkWrapper: ViewStyle;
   link: TextStyle;
-  // checkboxContainer can be part of this or defined separately if it's deeply nested
+  checkboxContainer: ViewStyle;
 };
 
-const styles = StyleSheet.create<Styles & { checkboxContainer: ViewStyle }>({
+// 5. Simplified styles
+const styles = StyleSheet.create<Styles>({
   safe: { flex: 1, backgroundColor: "#000" },
   flex: { flex: 1 },
   container: {
@@ -57,13 +57,8 @@ const styles = StyleSheet.create<Styles & { checkboxContainer: ViewStyle }>({
     marginBottom: 32,
   },
   input: {
-    backgroundColor: "#111",
-    color: "#fff",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: Platform.OS === "ios" ? 12 : 10, // Adjusted padding for Android
     marginBottom: 16,
-    fontSize: 16,
+    backgroundColor: "transparent", // Let Paper handle the background
   },
   button: {
     backgroundColor: "#0047AB",
@@ -77,12 +72,7 @@ const styles = StyleSheet.create<Styles & { checkboxContainer: ViewStyle }>({
   linkWrapper: { marginTop: 16, alignItems: "center" },
   link: { color: "#0047AB", fontSize: 14 },
   checkboxContainer: {
-    // Ensure this matches the usage in Checkbox.Item
-    // If Checkbox.Item is used, it often handles its own container styling.
-    // This style might be for a <View> wrapping the Checkbox if not using Checkbox.Item
-    // For Checkbox.Item, you might not need a dedicated container style here,
-    // but can apply margin directly to Checkbox.Item's style prop.
-    marginBottom: 10, // Reduced margin slightly
+    marginBottom: 10,
   },
 });
 
@@ -94,7 +84,6 @@ export default function LoginPage() {
   const router = useRouter();
   const colorScheme = useColorScheme() ?? "light";
 
-  // Optional: Load the checkbox preference when the component mounts
   useEffect(() => {
     const loadPreference = async () => {
       try {
@@ -145,19 +134,19 @@ export default function LoginPage() {
           keyboardShouldPersistTaps="handled"
         >
           <Text style={styles.title}>Welcome Back</Text>
+          {/* 2. Replace react-native TextInput with Paper's TextInput */}
+          {/* 3. Change 'placeholder' prop to 'label' */}
           <TextInput
+            label="Email"
             style={styles.input}
-            placeholder="Email"
-            placeholderTextColor="#888"
             autoCapitalize="none"
             keyboardType="email-address"
             value={email}
             onChangeText={setEmail}
           />
           <TextInput
+            label="Password"
             style={styles.input}
-            placeholder="Password"
-            placeholderTextColor="#888"
             secureTextEntry
             value={password}
             onChangeText={setPassword}
@@ -171,7 +160,7 @@ export default function LoginPage() {
             uncheckedColor={Colors[colorScheme].icon}
             labelStyle={{ color: Colors[colorScheme].text, fontSize: 16 }}
             style={styles.checkboxContainer}
-            position="trailing" // <--- ALTERADO PARA "trailing"
+            position="trailing"
           />
 
           <TouchableOpacity
