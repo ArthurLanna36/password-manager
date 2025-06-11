@@ -4,7 +4,7 @@ import CryptoJS from "crypto-js"; // Main CryptoJS import
 import * as ExpoCrypto from "expo-crypto"; // From Expo SDK
 
 // Constants for cryptographic operations
-const ITERATIONS = 100000; // Number of iterations for PBKDF2
+const ITERATIONS = 50000; // Number of iterations for PBKDF2
 const KEY_SIZE_BITS = 256; // AES key size in bits (256 bits = 32 bytes)
 const SALT_SIZE_BYTES = 16; // Salt size in bytes
 const IV_SIZE_BYTES = 12; // Recommended IV size for AES-GCM is 12 bytes (96 bits)
