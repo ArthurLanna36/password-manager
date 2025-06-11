@@ -25,45 +25,50 @@ export default function SettingsScreen() {
     Appearance.setColorScheme(nextColorScheme);
   };
 
-  const logoutColor = colorScheme === "dark" ? "#FF6B6B" : "#D32F2F";
+  // Use the notification color from our updated Colors constant
+  const logoutColor =
+    colorScheme === "dark"
+      ? Colors.dark.notification
+      : Colors.light.notification;
 
-  // 5. Create a new StyleSheet with 'card' and other styles
+  // 5. Create a new StyleSheet with 'card' and other styles to match the reference
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      // Use a slightly off-white/off-black background for contrast with the cards
-      backgroundColor: paperTheme.colors.background,
+      // Use a slightly different background to make cards stand out
+      backgroundColor:
+        colorScheme === "dark" ? "#000" : paperTheme.colors.background,
     },
     contentContainer: {
-      padding: 16,
+      paddingVertical: 24,
+      paddingHorizontal: 16,
     },
     card: {
       borderRadius: 12,
-      backgroundColor: paperTheme.colors.surface, // Use surface color from theme for the card
-      marginBottom: 16,
-      overflow: "hidden", // Important to clip the List.Item ripple effect to the card's border
+      backgroundColor: paperTheme.colors.surface, // Use surface color for the card
+      marginBottom: 24,
+      overflow: "hidden", // Clip List.Item ripple effect to the card's border
     },
     subheader: {
-      // Style for the section title (e.g., "APPEARANCE")
       textTransform: "uppercase",
-      fontWeight: "bold",
-      fontSize: 13,
-      color: Colors[colorScheme].icon,
       paddingTop: 20,
       paddingBottom: 8,
+      paddingHorizontal: 16,
+      letterSpacing: 0.5,
     },
+    // The List.Item itself doesn't need much custom styling
+    // as Paper's component handles it well.
   });
 
   return (
-    // 1. Change the root view to a ScrollView for better layout control
+    // 1. Use a ScrollView for the main container
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
     >
-      {/* 2. Wrap each settings group in a styled 'card' View */}
+      {/* 2. Wrap the "Appearance" section in a styled card View */}
       <View style={styles.card}>
         <List.Section>
-          {/* 3. Apply specific styles to List.Subheader */}
           <List.Subheader style={styles.subheader}>Appearance</List.Subheader>
           <List.Item
             title={`Switch to ${
@@ -82,13 +87,14 @@ export default function SettingsScreen() {
         </List.Section>
       </View>
 
+      {/* 3. Wrap the "Account" section in another card View */}
       <View style={styles.card}>
         <List.Section>
           <List.Subheader style={styles.subheader}>Account</List.Subheader>
           <List.Item
             title="Logout"
             titleStyle={{ color: logoutColor }}
-            left={({ color, ...props }) => (
+            left={(props) => (
               <List.Icon {...props} icon="logout" color={logoutColor} />
             )}
             onPress={handleLogout}
@@ -96,21 +102,7 @@ export default function SettingsScreen() {
         </List.Section>
       </View>
 
-      {/* Example for a future section */}
-      {/* <View style={styles.card}>
-        <List.Section>
-          <List.Subheader style={styles.subheader}>About</List.Subheader>
-          <List.Item
-            title="Version"
-            right={() => <Text style={{color: Colors[colorScheme].icon}}>1.0.0</Text>}
-          />
-          <Divider />
-          <List.Item
-            title="Privacy Policy"
-          />
-        </List.Section>
-      </View>
-      */}
+      {/* You can continue this pattern for other sections */}
     </ScrollView>
   );
 }

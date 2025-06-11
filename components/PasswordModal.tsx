@@ -16,9 +16,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-// 1. Import Button and TextInput from react-native-paper
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { Button as PaperButton, TextInput } from "react-native-paper";
+import { Divider, Button as PaperButton, TextInput } from "react-native-paper";
 import { ThemedText } from "./ThemedText";
 import { ThemedView } from "./ThemedView";
 
@@ -27,6 +26,9 @@ interface PasswordModalProps {
   onClose: () => void;
   onSubmit: (data: PasswordFormData) => void;
   initialData?: PasswordEntry | null;
+  onRevealPassword: (item: PasswordEntry) => Promise<string | null>;
+  onDeletePassword: (item: PasswordEntry) => void;
+  onCopyToClipboard: (text: string) => void;
 }
 
 export function PasswordModal({
@@ -34,15 +36,20 @@ export function PasswordModal({
   onClose,
   onSubmit,
   initialData,
+  onRevealPassword,
+  onDeletePassword,
+  onCopyToClipboard,
 }: PasswordModalProps) {
   const colorScheme = useColorScheme() ?? "light";
   const [serviceName, setServiceName] = useState("");
   const [username, setUsername] = useState("");
   const [passwordPlain, setPasswordPlain] = useState("");
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [revealedPassword, setRevealedPassword] = useState<string | null>(null);
+  const [isRevealing, setIsRevealing] = useState(false);
 
   const isEditing = !!initialData;
-  const modalTitle = isEditing ? "Edit Password" : "Add New Password";
+  const modalTitle = isEditing ? "Details" : "Add New Password";
   const submitButtonText = isEditing ? "Save Changes" : "Add Password";
 
   useEffect(() => {
@@ -50,14 +57,13 @@ export function PasswordModal({
       if (initialData) {
         setServiceName(initialData.serviceName);
         setUsername(initialData.username || "");
-        setPasswordPlain("");
-        setIsPasswordVisible(false);
       } else {
         setServiceName("");
         setUsername("");
-        setPasswordPlain("");
-        setIsPasswordVisible(false);
       }
+      setPasswordPlain("");
+      setIsPasswordVisible(false);
+      setRevealedPassword(null);
     }
   }, [visible, initialData]);
 
@@ -80,7 +86,6 @@ export function PasswordModal({
       onClose();
       return;
     }
-
     onSubmit({
       serviceName: serviceName.trim(),
       username: username.trim() || undefined,
@@ -88,55 +93,36 @@ export function PasswordModal({
     });
   };
 
-  const themedStyles = StyleSheet.create({
-    modalOverlay: {
-      flex: 1,
-      backgroundColor: "transparent",
-    },
-    modalContent: {
-      flex: 1,
-    },
-    modalHeader: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      paddingHorizontal: 15,
-      paddingTop: 10,
-      paddingBottom: 10,
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: Colors[colorScheme].icon,
-    },
-    modalTitle: {
-      fontSize: 20,
-      fontWeight: "bold",
-      color: Colors[colorScheme].text,
-    },
-    scrollContainer: {
-      paddingHorizontal: 20,
-      paddingTop: 20,
-    },
-    // 5. Simplified input style
-    input: {
-      marginBottom: 16,
-    },
-    buttonContainer: {
-      flexDirection: "row",
-      justifyContent: "space-around",
-      padding: 20,
-    },
-    button: {
-      flex: 1,
-    },
-    cancelButton: {
-      marginRight: 8,
-    },
-    submitButton: {
-      marginLeft: 8,
-    },
-    closeButton: {
-      padding: 5,
-    },
-  });
+  const handleReveal = async () => {
+    if (!initialData) return;
+    setIsRevealing(true);
+    const decrypted = await onRevealPassword(initialData);
+    setIsRevealing(false);
+    if (decrypted) {
+      setRevealedPassword(decrypted);
+    } else {
+      Alert.alert("Error", "Could not decrypt password.");
+    }
+  };
+
+  const handleDelete = () => {
+    if (!initialData) return;
+    Alert.alert(
+      "Delete Password",
+      `Are you sure you want to delete the password for "${initialData.serviceName}"? This action cannot be undone.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            onDeletePassword(initialData);
+            onClose();
+          },
+        },
+      ]
+    );
+  };
 
   return (
     <Modal
@@ -147,19 +133,14 @@ export function PasswordModal({
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={themedStyles.modalOverlay}
+        style={{ flex: 1 }}
       >
         <GestureHandlerRootView style={{ flex: 1 }}>
-          <ThemedView style={themedStyles.modalContent}>
+          <ThemedView style={styles.modalContent}>
             <SafeAreaView style={{ flex: 1 }}>
-              <View style={themedStyles.modalHeader}>
-                <ThemedText style={themedStyles.modalTitle}>
-                  {modalTitle}
-                </ThemedText>
-                <TouchableOpacity
-                  style={themedStyles.closeButton}
-                  onPress={onClose}
-                >
+              <View style={styles.modalHeader}>
+                <ThemedText style={styles.modalTitle}>{modalTitle}</ThemedText>
+                <TouchableOpacity style={styles.closeButton} onPress={onClose}>
                   <Feather
                     name="x"
                     size={24}
@@ -169,36 +150,35 @@ export function PasswordModal({
               </View>
 
               <ScrollView
-                contentContainerStyle={themedStyles.scrollContainer}
+                contentContainerStyle={styles.scrollContainer}
                 keyboardShouldPersistTaps="handled"
               >
-                {/* 2. Replace all inputs with Paper's TextInput */}
                 <TextInput
-                  label="Service Name (e.g., Google, Facebook)"
+                  label="Service Name"
                   mode="outlined"
-                  style={themedStyles.input}
+                  style={styles.input}
                   value={serviceName}
                   onChangeText={setServiceName}
                   autoCapitalize="words"
                 />
                 <TextInput
-                  label="Username or Email (optional)"
+                  label="Username or Email"
                   mode="outlined"
-                  style={themedStyles.input}
+                  style={styles.input}
                   value={username}
                   onChangeText={setUsername}
                   autoCapitalize="none"
                   keyboardType="email-address"
                 />
                 <TextInput
-                  label="Password"
+                  label={isEditing ? "New Password" : "Password"}
                   mode="outlined"
-                  style={themedStyles.input}
+                  style={styles.input}
+                  placeholder={isEditing ? "Leave blank to keep the same" : ""}
                   secureTextEntry={!isPasswordVisible}
                   value={passwordPlain}
                   onChangeText={setPasswordPlain}
                   autoCapitalize="none"
-                  // 4. Use the 'right' prop for the icon
                   right={
                     <TextInput.Icon
                       icon={isPasswordVisible ? "eye-off" : "eye"}
@@ -206,21 +186,61 @@ export function PasswordModal({
                     />
                   }
                 />
+
+                {isEditing && (
+                  <>
+                    <Divider style={styles.divider} />
+                    {revealedPassword ? (
+                      <TextInput
+                        label="Revealed Password"
+                        mode="outlined"
+                        value={revealedPassword}
+                        editable={false}
+                        style={styles.input}
+                        right={
+                          <TextInput.Icon
+                            icon="content-copy"
+                            onPress={() => onCopyToClipboard(revealedPassword)}
+                          />
+                        }
+                      />
+                    ) : (
+                      <PaperButton
+                        mode="text"
+                        icon="eye"
+                        onPress={handleReveal}
+                        loading={isRevealing}
+                        disabled={isRevealing}
+                      >
+                        Reveal Saved Password
+                      </PaperButton>
+                    )}
+                    <PaperButton
+                      mode="text"
+                      // Changed "trash-2" to "delete"
+                      icon="delete"
+                      onPress={handleDelete}
+                      textColor={Colors[colorScheme].notification || "#ff3b30"}
+                      style={{ marginTop: 10, alignSelf: "center" }}
+                    >
+                      Delete Entry
+                    </PaperButton>
+                  </>
+                )}
               </ScrollView>
 
-              {/* 3. Replaced TouchableOpacity with PaperButton */}
-              <View style={themedStyles.buttonContainer}>
+              <View style={styles.buttonContainer}>
                 <PaperButton
                   mode="outlined"
                   onPress={onClose}
-                  style={[themedStyles.button, themedStyles.cancelButton]}
+                  style={[styles.button, styles.cancelButton]}
                 >
                   Cancel
                 </PaperButton>
                 <PaperButton
                   mode="contained"
                   onPress={handleSubmit}
-                  style={[themedStyles.button, themedStyles.submitButton]}
+                  style={[styles.button, styles.submitButton]}
                 >
                   {submitButtonText}
                 </PaperButton>
@@ -232,3 +252,51 @@ export function PasswordModal({
     </Modal>
   );
 }
+
+const styles = StyleSheet.create({
+  modalContent: {
+    flex: 1,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 15,
+    paddingTop: 10,
+    paddingBottom: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "#ccc",
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+  },
+  closeButton: {
+    padding: 5,
+  },
+  scrollContainer: {
+    padding: 20,
+  },
+  input: {
+    marginBottom: 16,
+  },
+  divider: {
+    marginVertical: 20,
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    padding: 20,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "#ccc",
+  },
+  button: {
+    flex: 1,
+  },
+  cancelButton: {
+    marginRight: 8,
+  },
+  submitButton: {
+    marginLeft: 8,
+  },
+});

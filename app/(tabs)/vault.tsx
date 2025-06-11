@@ -11,6 +11,7 @@ import { useColorScheme } from "@/hooks/useColorScheme";
 import { usePasswordManager } from "@/hooks/usePasswordManager";
 import { useVaultStatus } from "@/hooks/useVaultStatus";
 import { PasswordEntry, PasswordFormData } from "@/types/vault";
+import { decryptDataWithKey } from "@/utils/encryptionService";
 import { Feather } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
@@ -48,9 +49,6 @@ export default function VaultScreen() {
     fetchPasswords,
     handleModalSubmit: pmHandleModalSubmit,
     handleDeletePassword: pmHandleDeletePassword,
-    showPasswordId,
-    revealedPassword,
-    handleTogglePasswordVisibility,
     copyToClipboard,
     isPasswordLoading,
     isRefreshingPasswords,
@@ -95,18 +93,9 @@ export default function VaultScreen() {
     }
   }, [isVaultLocked, derivedEncryptionKey, fetchPasswords]);
 
-  const handleOpenAddModal = () => {
+  const handleOpenModal = (item: PasswordEntry | null) => {
     if (isVaultLocked) {
-      Alert.alert("Vault Locked", "Unlock the vault to add passwords.");
-      return;
-    }
-    setEditingPassword(null);
-    setModalVisible(true);
-  };
-
-  const handleOpenEditModal = (item: PasswordEntry) => {
-    if (isVaultLocked) {
-      Alert.alert("Vault Locked", "Unlock the vault to edit passwords.");
+      Alert.alert("Vault Locked", "Unlock the vault to manage passwords.");
       return;
     }
     setEditingPassword(item);
@@ -124,6 +113,15 @@ export default function VaultScreen() {
     if (success) {
       handleModalClose();
     }
+  };
+
+  const handleRevealPassword = async (item: PasswordEntry) => {
+    if (!derivedEncryptionKey) return null;
+    return decryptDataWithKey(
+      item.passwordEncrypted,
+      item.iv,
+      derivedEncryptionKey
+    );
   };
 
   if (isVaultStatusLoading && !currentUser && !derivedEncryptionKey) {
@@ -166,18 +164,7 @@ export default function VaultScreen() {
           renderItem={({ item }) => (
             <PasswordListItem
               item={item}
-              isRevealed={
-                showPasswordId === item.id && revealedPassword !== null
-              }
-              revealedPasswordText={
-                showPasswordId === item.id ? revealedPassword : null
-              }
-              isLoading={isPasswordLoading || isScreenLoading}
-              isVaultLocked={isVaultLocked}
-              onTogglePasswordVisibility={handleTogglePasswordVisibility}
-              onOpenEditModal={handleOpenEditModal}
-              onDeletePassword={pmHandleDeletePassword}
-              onCopyToClipboard={copyToClipboard}
+              onPress={() => handleOpenModal(item)}
             />
           )}
           keyExtractor={(item) => String(item.id)}
@@ -202,7 +189,7 @@ export default function VaultScreen() {
           styles.addButton,
           { backgroundColor: Colors[colorScheme].tint },
         ]}
-        onPress={handleOpenAddModal}
+        onPress={() => handleOpenModal(null)}
         disabled={isScreenLoading || isPasswordLoading}
       >
         <Feather name="plus" size={30} color={Colors[colorScheme].background} />
@@ -212,6 +199,9 @@ export default function VaultScreen() {
         onClose={handleModalClose}
         onSubmit={onPasswordFormSubmit}
         initialData={editingPassword}
+        onRevealPassword={handleRevealPassword}
+        onDeletePassword={pmHandleDeletePassword}
+        onCopyToClipboard={copyToClipboard}
       />
     </ThemedView>
   );
