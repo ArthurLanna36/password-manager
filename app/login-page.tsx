@@ -1,4 +1,3 @@
-// app/login-page.tsx
 import { Colors } from "@/constants/Colors";
 import { supabase } from "@/constants/supabase";
 import { useColorScheme } from "@/hooks/useColorScheme";
@@ -19,7 +18,6 @@ import {
   View,
   ViewStyle,
 } from "react-native";
-// 1. Import TextInput and Checkbox from react-native-paper
 import { Checkbox, TextInput } from "react-native-paper";
 
 const KEEP_ME_SIGNED_IN_KEY = "keepMeSignedInPreference";
@@ -29,7 +27,7 @@ type Styles = {
   flex: ViewStyle;
   container: ViewStyle;
   title: TextStyle;
-  input: TextStyle; // Kept for marginBottom
+  input: TextStyle;
   button: ViewStyle;
   buttonDisabled: ViewStyle;
   buttonText: TextStyle;
@@ -38,7 +36,6 @@ type Styles = {
   checkboxContainer: ViewStyle;
 };
 
-// 5. Simplified styles
 const styles = StyleSheet.create<Styles>({
   safe: { flex: 1, backgroundColor: "#000" },
   flex: { flex: 1 },
@@ -58,7 +55,7 @@ const styles = StyleSheet.create<Styles>({
   },
   input: {
     marginBottom: 16,
-    backgroundColor: "transparent", // Let Paper handle the background
+    backgroundColor: "transparent",
   },
   button: {
     backgroundColor: "#0047AB",
@@ -134,8 +131,6 @@ export default function LoginPage() {
           keyboardShouldPersistTaps="handled"
         >
           <Text style={styles.title}>Welcome Back</Text>
-          {/* 2. Replace react-native TextInput with Paper's TextInput */}
-          {/* 3. Change 'placeholder' prop to 'label' */}
           <TextInput
             label="Email"
             style={styles.input}

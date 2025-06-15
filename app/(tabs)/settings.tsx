@@ -1,8 +1,6 @@
-// app/(tabs)/settings.tsx
 import { useRouter } from "expo-router";
 import React from "react";
 import { Appearance, ScrollView, StyleSheet } from "react-native";
-// 1. Import Card from react-native-paper
 import { Card, List, useTheme } from "react-native-paper";
 
 import { Colors } from "@/constants/Colors";
@@ -37,7 +35,6 @@ export default function SettingsScreen() {
       ]}
       contentContainerStyle={styles.contentContainer}
     >
-      {/* 2. Replaced the styled View with the Card component */}
       <Card style={styles.card}>
         <List.Section>
           <List.Subheader style={styles.subheader}>Appearance</List.Subheader>
@@ -75,7 +72,6 @@ export default function SettingsScreen() {
   );
 }
 
-// 3. Simplified and standardized styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -84,7 +80,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   card: {
-    marginBottom: 16, // Consistent spacing between cards
+    marginBottom: 16,
   },
   subheader: {
     textTransform: "uppercase",

@@ -1,4 +1,3 @@
-// app/(tabs)/_layout.tsx
 import { Feather } from "@expo/vector-icons";
 import React, { useState } from "react";
 import { View } from "react-native";
@@ -11,7 +10,6 @@ import {
 
 import GeneratorScreen from "./generator";
 import HomeScreen from "./index";
-// ✨ 1. Importe a nova tela
 import SettingsScreen from "./settings";
 import VaultScreen from "./vault";
 
@@ -30,7 +28,6 @@ function TabLayoutContent() {
 
   const { setNeedsClear, clearPasswordAction } = useGeneratorContext();
 
-  // ✨ 2. Defina as rotas, incluindo a nova aba "Settings"
   const [routes] = useState([
     {
       key: "home",
@@ -65,7 +62,6 @@ function TabLayoutContent() {
         <Feather name="key" size={size} color={color} />
       ),
     },
-    // ✨ Adicionada a nova rota de configurações
     {
       key: "settings",
       title: "Settings",
@@ -79,12 +75,11 @@ function TabLayoutContent() {
     },
   ]);
 
-  // ✨ 3. Mapeie a chave da rota para o componente da tela
   const renderScene = BottomNavigation.SceneMap({
     home: HomeScreen,
     vault: VaultScreen,
     generator: GeneratorScreen,
-    settings: SettingsScreen, // Mapeamento da nova tela
+    settings: SettingsScreen,
   });
 
   const currentRouteTitle = routes[index].title;
@@ -104,7 +99,6 @@ function TabLayoutContent() {
 
   return (
     <View style={{ flex: 1 }}>
-      {/* ✨ 4. O cabeçalho agora está simplificado, sem o menu */}
       <Appbar.Header
         style={{ backgroundColor: paperTheme.colors.elevation.level2 }}
       >
@@ -112,7 +106,6 @@ function TabLayoutContent() {
           title={currentRouteTitle}
           titleStyle={{ color: Colors[colorScheme].text }}
         />
-        {/* 🗑️ O Appbar.Action e o Menu foram removidos daqui */}
       </Appbar.Header>
 
       <BottomNavigation

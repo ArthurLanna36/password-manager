@@ -1,4 +1,3 @@
-// app/(tabs)/register-page.tsx
 import { supabase } from "@/constants/supabase";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
@@ -16,7 +15,6 @@ import {
   View,
   ViewStyle,
 } from "react-native";
-// 1. Import TextInput from react-native-paper
 import { TextInput } from "react-native-paper";
 
 type Styles = {
@@ -24,7 +22,7 @@ type Styles = {
   flex: ViewStyle;
   container: ViewStyle;
   title: TextStyle;
-  input: TextStyle; // Kept for marginBottom
+  input: TextStyle;
   button: ViewStyle;
   buttonDisabled: ViewStyle;
   buttonText: TextStyle;
@@ -32,7 +30,6 @@ type Styles = {
   link: TextStyle;
 };
 
-// 5. Simplified styles
 const styles = StyleSheet.create<Styles>({
   safe: { flex: 1, backgroundColor: "#000" },
   flex: { flex: 1 },
@@ -97,8 +94,6 @@ export default function RegisterPage() {
           keyboardShouldPersistTaps="handled"
         >
           <Text style={styles.title}>Create Account</Text>
-          {/* 2. Replace react-native TextInput with Paper's TextInput */}
-          {/* 3. Change 'placeholder' prop to 'label' */}
           <TextInput
             label="Email"
             style={styles.input}

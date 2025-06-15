@@ -18,7 +18,7 @@ import { useColorScheme } from "@/hooks/useColorScheme";
 const KEEP_ME_SIGNED_IN_KEY = "keepMeSignedInPreference";
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme() ?? "dark"; // Default to dark if system preference is null
+  const colorScheme = useColorScheme() ?? "dark";
   const router = useRouter();
   const appState = useRef(AppState.currentState);
 
@@ -43,7 +43,6 @@ export default function RootLayout() {
     const subscription = AppState.addEventListener(
       "change",
       async (nextAppState) => {
-        // Listener function is now async
         if (
           appState.current === "active" &&
           nextAppState.match(/inactive|background/)
@@ -53,18 +52,17 @@ export default function RootLayout() {
             const keepSignedInPref = await AsyncStorage.getItem(
               KEEP_ME_SIGNED_IN_KEY
             );
-            // Default to true (keep signed in) if preference is not explicitly set to false
+
             const shouldKeepSignedIn =
               keepSignedInPref !== null ? JSON.parse(keepSignedInPref) : true;
 
             if (!shouldKeepSignedIn) {
               const {
                 data: { session: activeSession },
-              } = await supabase.auth.getSession(); // Await the session
+              } = await supabase.auth.getSession();
               if (activeSession) {
                 // Only sign out if there is an active session
                 await supabase.auth.signOut();
-                // console.log("User signed out due to 'Keep me signed in' preference on backgrounding.");
               }
             }
           } catch (e) {

@@ -1,4 +1,3 @@
-// app/(tabs)/generator.tsx
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
@@ -20,14 +19,12 @@ import {
   Button as PaperButton,
   Text as PaperText,
   Portal,
-  // 1. Import TextInput from react-native-paper
   TextInput,
 } from "react-native-paper";
 import { styles } from "./styles/generator.styles";
 
 export default function GeneratorScreen() {
   const colorScheme = useColorScheme() ?? "light";
-  // ... (rest of the state remains the same)
   const [passwordLength, setPasswordLength] = useState(25);
   const [includeUppercase, setIncludeUppercase] = useState(true);
   const [includeLowercase, setIncludeLowercase] = useState(true);
@@ -39,8 +36,6 @@ export default function GeneratorScreen() {
 
   const { needsClear, setNeedsClear, setClearPasswordAction } =
     useGeneratorContext();
-
-  // ... (rest of the functions and effects remain the same)
 
   const performClearPassword = () => {
     setGeneratedPassword("");
@@ -101,7 +96,6 @@ export default function GeneratorScreen() {
   const decrementLength = () =>
     setPasswordLength((prev) => Math.max(prev - 1, 4));
 
-  // ... (dynamic styles object remains the same)
   const dynamicStyles = {
     container: {
       backgroundColor: Colors[colorScheme].background,
@@ -113,7 +107,6 @@ export default function GeneratorScreen() {
       color: Colors[colorScheme].text,
     },
     generatedPasswordInput: {
-      // Styles for the container of the Paper TextInput
       flex: 1,
       marginRight: 10,
     },
@@ -177,7 +170,6 @@ export default function GeneratorScreen() {
         contentContainerStyle={styles.contentContainer}
         keyboardShouldPersistTaps="handled"
       >
-        {/* ... (Password Length and Checkbox sections remain the same) ... */}
         <ThemedView style={styles.card}>
           <ThemedText style={[styles.sectionTitle, dynamicStyles.sectionTitle]}>
             Password Length
@@ -247,13 +239,11 @@ export default function GeneratorScreen() {
               Generated Password
             </ThemedText>
             <View style={styles.generatedPasswordContainer}>
-              {/* 2. Replace TextInput here */}
               <TextInput
                 mode="outlined"
                 style={dynamicStyles.generatedPasswordInput}
                 value={generatedPassword}
                 editable={false}
-                // 4. Use the 'right' prop for the copy icon
                 right={
                   <TextInput.Icon
                     icon="content-copy"
@@ -266,9 +256,7 @@ export default function GeneratorScreen() {
         ) : null}
       </ScrollView>
 
-      {/* ... (Portal and Dialogs remain the same) ... */}
       <Portal>
-        {/* Error Dialog */}
         <Dialog visible={isErrorDialogVisible} onDismiss={hideErrorDialog}>
           <Dialog.Title style={dynamicStyles.dialogTitle}>Error</Dialog.Title>
           <Dialog.Content>
@@ -287,7 +275,6 @@ export default function GeneratorScreen() {
           </Dialog.Actions>
         </Dialog>
 
-        {/* Copy Confirmation Dialog */}
         <Dialog visible={isCopyDialogVisible} onDismiss={hideCopyDialog}>
           <Dialog.Title style={dynamicStyles.dialogTitle}>Copied!</Dialog.Title>
           <Dialog.Content>

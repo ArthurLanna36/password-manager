@@ -1,4 +1,3 @@
-// app/(tabs)/vault.tsx
 import { PasswordListItem } from "@/components/PasswordListItem";
 import { PasswordModal } from "@/components/PasswordModal";
 import { ThemedView } from "@/components/ThemedView";
