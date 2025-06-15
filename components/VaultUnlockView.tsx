@@ -1,15 +1,11 @@
 // components/VaultUnlockView.tsx
+import { styles } from "@/components/styles/vaultUnlockView.styles";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import React, { useState } from "react";
-import {
-  ActivityIndicator,
-  Keyboard,
-  StyleSheet,
-  TouchableOpacity,
-} from "react-native";
+import { ActivityIndicator, Keyboard, TouchableOpacity } from "react-native";
 import {
   Dialog,
   Button as PaperButton,
@@ -112,36 +108,3 @@ export function VaultUnlockView({
     </ThemedView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  formContainer: {
-    padding: 20,
-    width: "100%",
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 20,
-    textAlign: "center",
-  },
-  input: {
-    width: "90%",
-    alignSelf: "center",
-    marginBottom: 15,
-  },
-  button: {
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-    width: "90%",
-    alignSelf: "center",
-    marginTop: 20,
-  },
-  buttonText: { fontSize: 16, fontWeight: "600" },
-});

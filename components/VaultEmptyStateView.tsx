@@ -1,8 +1,9 @@
 // components/VaultEmptyStateView.tsx
+import { styles } from "@/components/styles/vaultEmptyStateView.styles";
 import { ThemedText } from "@/components/ThemedText";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import React from "react";
-import { StyleSheet, View } from "react-native";
+import { View } from "react-native";
 
 export function VaultEmptyStateView() {
   const colorScheme = useColorScheme() ?? "light";
@@ -21,23 +22,3 @@ export function VaultEmptyStateView() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  emptyStateContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 50,
-  },
-  emptyText: {
-    textAlign: "center",
-    fontSize: 18,
-    opacity: 0.8,
-  },
-  emptySubText: {
-    textAlign: "center",
-    fontSize: 15,
-    opacity: 0.6,
-    marginTop: 8,
-  },
-});

@@ -1,11 +1,12 @@
 import { useRouter } from "expo-router";
 import React from "react";
-import { Appearance, ScrollView, StyleSheet } from "react-native";
+import { Appearance, ScrollView } from "react-native";
 import { Card, List, useTheme } from "react-native-paper";
 
 import { Colors } from "@/constants/Colors";
 import { supabase } from "@/constants/supabase";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { styles } from "./styles/settings.styles";
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -71,21 +72,3 @@ export default function SettingsScreen() {
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  contentContainer: {
-    padding: 16,
-  },
-  card: {
-    marginBottom: 16,
-  },
-  subheader: {
-    textTransform: "uppercase",
-    fontWeight: "bold",
-    fontSize: 13,
-    letterSpacing: 0.5,
-  },
-});

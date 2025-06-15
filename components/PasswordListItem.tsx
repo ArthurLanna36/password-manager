@@ -1,8 +1,9 @@
 // components/PasswordListItem.tsx
+import { styles } from "@/components/styles/passwordListItem.styles";
 import { ThemedText } from "@/components/ThemedText";
 import { PasswordEntry } from "@/types/vault";
 import React from "react";
-import { StyleSheet, TouchableOpacity } from "react-native";
+import { TouchableOpacity } from "react-native";
 import { Card } from "react-native-paper";
 
 interface PasswordListItemProps {
@@ -26,19 +27,3 @@ export function PasswordListItem({ item, onPress }: PasswordListItemProps) {
     </TouchableOpacity>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    marginHorizontal: 16,
-    marginVertical: 6,
-  },
-  itemText: {
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  itemUsernameText: {
-    fontSize: 14,
-    opacity: 0.7,
-    marginTop: 3,
-  },
-});
