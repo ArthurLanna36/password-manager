@@ -9,7 +9,7 @@ import Animated, {
 import { ThemedView } from "@/components/ThemedView";
 import { useBottomTabOverflow } from "@/components/ui/TabBarBackground";
 import { useColorScheme } from "@/hooks/useColorScheme";
-import { HEADER_HEIGHT, styles } from "./styles/parallaxScrollView.styles";
+import { HEADER_HEIGHT, styles } from "./parallaxScrollView.styles";
 
 type Props = PropsWithChildren<{
   headerImage?: ReactElement;

@@ -1,14 +1,14 @@
 // components/VaultLoadingView.tsx
-import { styles } from "@/components/styles/vaultLoadingView.styles";
-import { ThemedText } from "@/components/ThemedText";
+import { ThemedText } from "@/components/ThemedText/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import React from "react";
 import { ActivityIndicator } from "react-native";
+import { styles } from "./vaultLoadingView.styles";
 
 interface VaultLoadingViewProps {
-  message?: string; // Optional message to display below the spinner
+  message?: string;
 }
 
 export function VaultLoadingView({ message }: VaultLoadingViewProps) {

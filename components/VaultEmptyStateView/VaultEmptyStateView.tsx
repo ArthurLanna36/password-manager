@@ -1,9 +1,9 @@
 // components/VaultEmptyStateView.tsx
-import { styles } from "@/components/styles/vaultEmptyStateView.styles";
-import { ThemedText } from "@/components/ThemedText";
+import { ThemedText } from "@/components/ThemedText/ThemedText";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import React from "react";
 import { View } from "react-native";
+import { styles } from "./vaultEmptyStateView.styles";
 
 export function VaultEmptyStateView() {
   const colorScheme = useColorScheme() ?? "light";

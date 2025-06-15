@@ -1,6 +1,5 @@
 // components/VaultUnlockView.tsx
-import { styles } from "@/components/styles/vaultUnlockView.styles";
-import { ThemedText } from "@/components/ThemedText";
+import { ThemedText } from "@/components/ThemedText/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
@@ -13,6 +12,7 @@ import {
   Portal,
   TextInput,
 } from "react-native-paper";
+import { styles } from "./vaultUnlockView.styles";
 
 interface VaultUnlockViewProps {
   masterPasswordInput: string;

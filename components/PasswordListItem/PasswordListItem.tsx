@@ -1,10 +1,10 @@
 // components/PasswordListItem.tsx
-import { styles } from "@/components/styles/passwordListItem.styles";
-import { ThemedText } from "@/components/ThemedText";
+import { ThemedText } from "@/components/ThemedText/ThemedText";
 import { PasswordEntry } from "@/types/vault";
 import React from "react";
 import { TouchableOpacity } from "react-native";
 import { Card } from "react-native-paper";
+import { styles } from "./passwordListItem.styles";
 
 interface PasswordListItemProps {
   item: PasswordEntry;

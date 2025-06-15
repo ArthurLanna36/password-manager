@@ -22,9 +22,9 @@ import {
   TextInput,
   useTheme,
 } from "react-native-paper";
-import { ThemedText } from "./ThemedText";
-import { ThemedView } from "./ThemedView";
-import { styles } from "./styles/passwordModal.styles";
+import { ThemedText } from "../ThemedText/ThemedText";
+import { ThemedView } from "../ThemedView";
+import { styles } from "./passwordModal.styles";
 
 interface PasswordModalProps {
   visible: boolean;

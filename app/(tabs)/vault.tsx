@@ -1,10 +1,10 @@
-import { PasswordListItem } from "@/components/PasswordListItem";
-import { PasswordModal } from "@/components/PasswordModal";
+import { PasswordListItem } from "@/components/PasswordListItem/PasswordListItem";
+import { PasswordModal } from "@/components/PasswordModal/PasswordModal";
 import { ThemedView } from "@/components/ThemedView";
-import { VaultEmptyStateView } from "@/components/VaultEmptyStateView";
-import { VaultLoadingView } from "@/components/VaultLoadingView";
-import { VaultSetupView } from "@/components/VaultSetupView";
-import { VaultUnlockView } from "@/components/VaultUnlockView";
+import { VaultEmptyStateView } from "@/components/VaultEmptyStateView/VaultEmptyStateView";
+import { VaultLoadingView } from "@/components/VaultLoadingView/VaultLoadingView";
+import { VaultSetupView } from "@/components/VaultSetupView/VaultSetupView";
+import { VaultUnlockView } from "@/components/VaultUnlockView/VaultUnlockView";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { usePasswordManager } from "@/hooks/usePasswordManager";

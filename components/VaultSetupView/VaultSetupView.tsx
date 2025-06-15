@@ -1,10 +1,10 @@
 // components/VaultSetupView.tsx
-import { styles } from "@/components/styles/vaultSetupView.styles";
-import { ThemedText } from "@/components/ThemedText";
+import { ThemedText } from "@/components/ThemedText/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import React, { useState } from "react";
 import { ActivityIndicator, Keyboard, TouchableOpacity } from "react-native";
 import { TextInput } from "react-native-paper";
+import { styles } from "./vaultSetupView.styles";
 
 interface VaultSetupViewProps {
   setupMasterPassword: string;
