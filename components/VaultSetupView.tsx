@@ -8,7 +8,6 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from "react-native";
-// 1. Import TextInput from react-native-paper
 import { TextInput } from "react-native-paper";
 
 interface VaultSetupViewProps {
@@ -28,7 +27,6 @@ export function VaultSetupView({
   handleSetupVault,
   isLoading,
 }: VaultSetupViewProps) {
-  // Add state for password visibility
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] =
     useState(false);
@@ -45,7 +43,6 @@ export function VaultSetupView({
         Create a strong master password. This password will encrypt all your
         other passwords. **Do not forget it, as it cannot be recovered!**
       </ThemedText>
-      {/* 2. Replace RNTextInput with Paper's TextInput */}
       <TextInput
         label="New Master Password"
         style={styles.input}
@@ -53,7 +50,6 @@ export function VaultSetupView({
         value={setupMasterPassword}
         onChangeText={setSetupMasterPassword}
         autoCapitalize="none"
-        // 4. Use the 'right' prop for the icon
         right={
           <TextInput.Icon
             icon={isPasswordVisible ? "eye-off" : "eye"}
@@ -95,7 +91,6 @@ export function VaultSetupView({
   );
 }
 
-// 5. Simplified styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -125,7 +120,7 @@ const styles = StyleSheet.create({
     alignSelf: "center",
   },
   button: {
-    backgroundColor: "#007AFF", // Example color
+    backgroundColor: "#007AFF",
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: "center",

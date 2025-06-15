@@ -10,7 +10,6 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from "react-native";
-// 1. Import necessary components from react-native-paper
 import {
   Dialog,
   Button as PaperButton,
@@ -34,7 +33,7 @@ export function VaultUnlockView({
 }: VaultUnlockViewProps) {
   const colorScheme = useColorScheme() ?? "light";
   const [isDialogVisible, setIsDialogVisible] = useState(false);
-  const [isPasswordVisible, setIsPasswordVisible] = useState(false); // State for password visibility
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   const themedButtonStyle = [
     styles.button,
@@ -62,7 +61,6 @@ export function VaultUnlockView({
   return (
     <ThemedView style={[styles.container, styles.formContainer]}>
       <ThemedText style={styles.title}>Unlock Vault</ThemedText>
-      {/* 2. Replaced RNTextInput with Paper's TextInput */}
       <TextInput
         label="Master Password"
         mode="outlined"
@@ -72,7 +70,6 @@ export function VaultUnlockView({
         onChangeText={setMasterPasswordInput}
         onSubmitEditing={onSubmitEditing}
         autoCapitalize="none"
-        // 4. Added right icon for password visibility
         right={
           <TextInput.Icon
             icon={isPasswordVisible ? "eye-off" : "eye"}
@@ -116,7 +113,6 @@ export function VaultUnlockView({
   );
 }
 
-// 5. Simplified styles for the input
 const styles = StyleSheet.create({
   container: {
     flex: 1,

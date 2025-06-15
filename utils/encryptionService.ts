@@ -1,17 +1,15 @@
 // utils/encryptionService.ts
-import { Buffer } from "buffer"; // Ensure 'buffer' is in your package.json
-import CryptoJS from "crypto-js"; // Main CryptoJS import
-import * as ExpoCrypto from "expo-crypto"; // From Expo SDK
+import { Buffer } from "buffer";
+import CryptoJS from "crypto-js";
+import * as ExpoCrypto from "expo-crypto";
 
 // Constants for cryptographic operations
-const ITERATIONS = 50000; // Number of iterations for PBKDF2
-const KEY_SIZE_BITS = 256; // AES key size in bits (256 bits = 32 bytes)
-const SALT_SIZE_BYTES = 16; // Salt size in bytes
-const IV_SIZE_BYTES = 12; // Recommended IV size for AES-GCM is 12 bytes (96 bits)
-// If using CBC (as per previous version you provided), IV is typically block size (16 bytes for AES)
-// For GCM, 12 bytes is standard. Let's stick to GCM logic if possible.
-// If CBC is indeed the fallback, IV_SIZE_BYTES should be 16.
-// The code you provided last was for CBC. I'll keep IV_SIZE_BYTES = 16 for CBC.
+const ITERATIONS = 50000;
+const KEY_SIZE_BITS = 256;
+const SALT_SIZE_BYTES = 16;
+// This implementation uses AES-CBC, which requires an IV size equal to the block size (16 bytes for AES).
+// For AES-GCM, the recommended IV size is 12 bytes (96 bits).
+const IV_SIZE_BYTES = 16;
 
 /**
  * Derives a cryptographic key from a master password and a salt using PBKDF2.
@@ -38,7 +36,7 @@ export async function deriveKeyFromMasterPassword(
     iterations: ITERATIONS,
     hasher: CryptoJS.algo.SHA256,
   });
-  return key.toString(CryptoJS.enc.Hex); // Convert the derived key WordArray to Hex
+  return key.toString(CryptoJS.enc.Hex);
 }
 
 /**
@@ -51,9 +49,7 @@ export async function generateSalt(): Promise<string> {
 }
 
 /**
- * Encrypts plaintext data using AES.
- * The previous version you provided was configured for AES-CBC by omitting mode/padding
- * and setting IV_SIZE_BYTES = 16. This version will stick to that unless GCM is confirmed working.
+ * Encrypts plaintext data using AES-CBC with PKCS7 padding.
  * @param plainText The string to encrypt.
  * @param derivedEncryptionKeyHex The derived encryption key (hex string).
  * @returns A promise that resolves to an object containing the ciphertext (hex) and IV (hex), or null on error.
@@ -63,23 +59,20 @@ export async function encryptDataWithKey(
   derivedEncryptionKeyHex: string
 ): Promise<{ cipherTextHex: string; ivHex: string } | null> {
   try {
-    const encryptionKey = CryptoJS.enc.Hex.parse(derivedEncryptionKeyHex); // Key as WordArray
-    const ivUint8Array = await ExpoCrypto.getRandomBytesAsync(IV_SIZE_BYTES); // IV for AES (16 bytes for CBC)
-    const iv = CryptoJS.lib.WordArray.create(ivUint8Array as any); // Convert Uint8Array to WordArray
+    const encryptionKey = CryptoJS.enc.Hex.parse(derivedEncryptionKeyHex);
+    const ivUint8Array = await ExpoCrypto.getRandomBytesAsync(IV_SIZE_BYTES);
+    const iv = CryptoJS.lib.WordArray.create(ivUint8Array as any);
     const ivHex = CryptoJS.enc.Hex.stringify(iv);
 
-    // Encrypt using AES (defaults to CBC with PKCS7 padding if mode/padding not specified)
+    // Encrypt using AES (defaults to CBC with PKCS7 padding)
     const encrypted = CryptoJS.AES.encrypt(
-      CryptoJS.enc.Utf8.parse(plainText), // Plaintext as WordArray
+      CryptoJS.enc.Utf8.parse(plainText),
       encryptionKey,
       {
         iv: iv,
-        // mode: (CryptoJS.mode as any).CBC, // Explicitly CBC if preferred, though it's default
-        // padding: (CryptoJS.pad as any).Pkcs7, // Explicitly Pkcs7 if preferred, though it's default
       }
     );
 
-    // encrypted.ciphertext is the WordArray of the actual ciphertext
     const cipherTextHex = encrypted.ciphertext.toString(CryptoJS.enc.Hex);
     return { cipherTextHex, ivHex };
   } catch (error) {
@@ -92,8 +85,7 @@ export async function encryptDataWithKey(
 }
 
 /**
- * Decrypts ciphertext data using AES.
- * Assumes AES-CBC with PKCS7 padding by default if mode/padding are not specified in options.
+ * Decrypts ciphertext data using AES-CBC with PKCS7 padding.
  * @param cipherTextHex The ciphertext to decrypt (hex string).
  * @param ivHex The initialization vector used for encryption (hex string).
  * @param derivedEncryptionKeyHex The derived encryption key (hex string).
@@ -107,32 +99,26 @@ export async function decryptDataWithKey(
   try {
     const encryptionKey = CryptoJS.enc.Hex.parse(derivedEncryptionKeyHex);
     const iv = CryptoJS.enc.Hex.parse(ivHex);
-    const cipherText = CryptoJS.enc.Hex.parse(cipherTextHex); // Ciphertext as WordArray
+    const cipherText = CryptoJS.enc.Hex.parse(cipherTextHex);
 
-    // Create CipherParams object for decryption
     const cipherParams = CryptoJS.lib.CipherParams.create({
       ciphertext: cipherText,
     });
 
     const decrypted = CryptoJS.AES.decrypt(cipherParams, encryptionKey, {
       iv: iv,
-      // mode: (CryptoJS.mode as any).CBC, // Default
-      // padding: (CryptoJS.pad as any).Pkcs7, // Default
     });
 
     const plainText = decrypted.toString(CryptoJS.enc.Utf8);
 
-    // If decryption fails (e.g., wrong key, IV, or corrupted data for CBC),
-    // toString(CryptoJS.enc.Utf8) on the result might produce an empty string or garbled data.
-    // A zero-byte output from decrypted (decrypted.sigBytes === 0) for non-empty ciphertext is a strong indicator of failure.
+    // A zero-byte output from decrypted (decrypted.sigBytes === 0) for non-empty ciphertext
+    // is a strong indicator of decryption failure (e.g., wrong key or IV).
     if (decrypted.sigBytes === 0 && cipherTextHex.length > 0) {
       console.error(
-        "[encryptionService] Decryption with key failed: Resulting plaintext is effectively empty (sigBytes: 0) for non-empty ciphertext. Check key, IV, or data integrity."
+        "[encryptionService] Decryption failed: Result is empty for non-empty ciphertext."
       );
       return null;
     }
-    // It's also possible for toString to return an empty string if the original plaintext was empty.
-    // However, if ciphertext was non-empty, an empty plaintext after decryption is suspicious.
 
     return plainText;
   } catch (error: any) {

@@ -3,7 +3,6 @@ import { ThemedText } from "@/components/ThemedText";
 import { PasswordEntry } from "@/types/vault";
 import React from "react";
 import { StyleSheet, TouchableOpacity } from "react-native";
-// 1. Import Card from react-native-paper
 import { Card } from "react-native-paper";
 
 interface PasswordListItemProps {
@@ -14,9 +13,7 @@ interface PasswordListItemProps {
 export function PasswordListItem({ item, onPress }: PasswordListItemProps) {
   return (
     <TouchableOpacity onPress={() => onPress(item)}>
-      {/* 2. Replaced ThemedView with Card component */}
       <Card style={styles.card}>
-        {/* 3. Used Card.Content for consistent padding */}
         <Card.Content>
           <ThemedText style={styles.itemText}>{item.serviceName}</ThemedText>
           {item.username && (
@@ -30,7 +27,6 @@ export function PasswordListItem({ item, onPress }: PasswordListItemProps) {
   );
 }
 
-// 4. Standardized styles
 const styles = StyleSheet.create({
   card: {
     marginHorizontal: 16,
