@@ -124,6 +124,17 @@ export function PasswordModal({
     );
   };
 
+  const handleHardwareUnlock = () => {
+    console.log(
+      "Hardware unlock feature pressed for:",
+      initialData?.serviceName
+    );
+    Alert.alert(
+      "Feature in Development",
+      "This feature will soon allow you to auto-fill your credentials using the hardware device."
+    );
+  };
+
   return (
     <Modal
       animationType="slide"
@@ -190,6 +201,17 @@ export function PasswordModal({
                 {isEditing && (
                   <>
                     <Divider style={styles.divider} />
+
+                    {/* New button for hardware unlock */}
+                    <PaperButton
+                      mode="contained-tonal"
+                      icon="lock-open-variant-outline"
+                      onPress={handleHardwareUnlock}
+                      style={{ marginBottom: 16 }}
+                    >
+                      Unlock with Hardware
+                    </PaperButton>
+
                     {revealedPassword ? (
                       <TextInput
                         label="Revealed Password"
@@ -217,7 +239,6 @@ export function PasswordModal({
                     )}
                     <PaperButton
                       mode="text"
-                      // Changed "trash-2" to "delete"
                       icon="delete"
                       onPress={handleDelete}
                       textColor={Colors[colorScheme].notification || "#ff3b30"}
