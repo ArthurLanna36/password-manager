@@ -54,7 +54,7 @@ export function usePasswordManager({
   const [isRefreshingPasswords, setIsRefreshingPasswords] = useState(false);
   const [showPasswordId, setShowPasswordId] = useState<string | null>(null);
   const [revealedPassword, setRevealedPassword] = useState<string | null>(null);
-  const revealTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const revealTimeoutRef = useRef<number | null>(null);
 
   const fetchPasswords = useCallback(
     async (isRefresh = false) => {
@@ -74,7 +74,7 @@ export function usePasswordManager({
         const { data, error: dbError } = await supabase
           .from(VAULT_TABLE_NAME)
           .select(
-            `${VAULT_PK_COLUMN}, user_id, service_name, username, encrypted_password, iv, created_at, updated_at`
+            `${VAULT_PK_COLUMN}, user_id, service_name, username, encrypted_password, iv, created_at, updated_at, website`
           )
           .eq("user_id", currentUser.id)
           .order("service_name", { ascending: true });
@@ -90,6 +90,7 @@ export function usePasswordManager({
             iv: item.iv,
             createdAt: item.created_at,
             updatedAt: item.updated_at,
+            website: item.website,
           })) || []
         );
       } catch (error: any) {
@@ -162,6 +163,7 @@ export function usePasswordManager({
           .update({
             service_name: formData.serviceName,
             username: formData.username || null,
+            website: formData.website || null,
             encrypted_password: cipherTextHex,
             iv: ivHex,
             updated_at: new Date().toISOString(),
@@ -176,6 +178,7 @@ export function usePasswordManager({
             user_id: currentUser.id,
             service_name: formData.serviceName,
             username: formData.username || null,
+            website: formData.website || null,
             encrypted_password: cipherTextHex, // Ensure this is not undefined
             iv: ivHex, // Ensure this is not undefined
           },

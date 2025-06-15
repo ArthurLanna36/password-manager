@@ -5,6 +5,19 @@ export const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginVertical: 6,
   },
+  cardContent: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  favicon: {
+    width: 24,
+    height: 24,
+    marginRight: 16,
+    borderRadius: 4,
+  },
+  textContainer: {
+    flex: 1,
+  },
   itemText: {
     fontSize: 18,
     fontWeight: "bold",

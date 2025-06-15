@@ -21,6 +21,8 @@ export interface PasswordEntry {
   createdAt: string;
   /** The ISO string representation of the last update date. */
   updatedAt: string;
+  /** The website URL for the service (optional). */
+  website?: string;
 }
 
 /**
@@ -34,6 +36,8 @@ export type PasswordFormData = {
   username?: string;
   /** The password in plaintext, as entered by the user in the form. */
   passwordPlain: string;
+  /** The website URL for the service (optional). */
+  website?: string;
 };
 
 /**

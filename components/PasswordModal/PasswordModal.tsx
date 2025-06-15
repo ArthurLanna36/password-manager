@@ -49,6 +49,7 @@ export function PasswordModal({
   const paperTheme = useTheme();
   const [serviceName, setServiceName] = useState("");
   const [username, setUsername] = useState("");
+  const [website, setWebsite] = useState("");
   const [passwordPlain, setPasswordPlain] = useState("");
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [revealedPassword, setRevealedPassword] = useState<string | null>(null);
@@ -63,9 +64,11 @@ export function PasswordModal({
       if (initialData) {
         setServiceName(initialData.serviceName);
         setUsername(initialData.username || "");
+        setWebsite(initialData.website || "");
       } else {
         setServiceName("");
         setUsername("");
+        setWebsite("");
       }
       setPasswordPlain("");
       setIsPasswordVisible(false);
@@ -96,6 +99,7 @@ export function PasswordModal({
       serviceName: serviceName.trim(),
       username: username.trim() || undefined,
       passwordPlain: passwordPlain,
+      website: website.trim() || undefined,
     });
   };
 
@@ -188,6 +192,15 @@ export function PasswordModal({
                   keyboardType="email-address"
                 />
                 <TextInput
+                  label="Website (ex: netflix.com)"
+                  mode="outlined"
+                  style={styles.input}
+                  value={website}
+                  onChangeText={setWebsite}
+                  autoCapitalize="none"
+                  keyboardType="url"
+                />
+                <TextInput
                   label={isEditing ? "New Password" : "Password"}
                   mode="outlined"
                   style={styles.input}
@@ -209,7 +222,11 @@ export function PasswordModal({
                     <Divider style={styles.divider} />
 
                     <PaperButton
-                      mode="contained-tonal"
+                      mode={
+                        colorScheme === "light"
+                          ? "contained"
+                          : "contained-tonal"
+                      }
                       icon="lock-open-variant-outline"
                       onPress={handleHardwareUnlock}
                       style={styles.actionButton}
@@ -233,7 +250,11 @@ export function PasswordModal({
                       />
                     ) : (
                       <PaperButton
-                        mode="contained-tonal"
+                        mode={
+                          colorScheme === "light"
+                            ? "contained"
+                            : "contained-tonal"
+                        }
                         icon="eye"
                         onPress={handleReveal}
                         loading={isRevealing}
