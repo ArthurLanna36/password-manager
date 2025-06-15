@@ -17,7 +17,12 @@ import {
   View,
 } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { Divider, Button as PaperButton, TextInput } from "react-native-paper";
+import {
+  Divider,
+  Button as PaperButton,
+  TextInput,
+  useTheme,
+} from "react-native-paper";
 import { ThemedText } from "./ThemedText";
 import { ThemedView } from "./ThemedView";
 
@@ -41,6 +46,7 @@ export function PasswordModal({
   onCopyToClipboard,
 }: PasswordModalProps) {
   const colorScheme = useColorScheme() ?? "light";
+  const paperTheme = useTheme();
   const [serviceName, setServiceName] = useState("");
   const [username, setUsername] = useState("");
   const [passwordPlain, setPasswordPlain] = useState("");
@@ -202,12 +208,11 @@ export function PasswordModal({
                   <>
                     <Divider style={styles.divider} />
 
-                    {/* New button for hardware unlock */}
                     <PaperButton
                       mode="contained-tonal"
                       icon="lock-open-variant-outline"
                       onPress={handleHardwareUnlock}
-                      style={{ marginBottom: 16 }}
+                      style={styles.actionButton}
                     >
                       Unlock with Hardware
                     </PaperButton>
@@ -218,7 +223,7 @@ export function PasswordModal({
                         mode="outlined"
                         value={revealedPassword}
                         editable={false}
-                        style={styles.input}
+                        style={[styles.input, { marginTop: 16 }]}
                         right={
                           <TextInput.Icon
                             icon="content-copy"
@@ -228,21 +233,23 @@ export function PasswordModal({
                       />
                     ) : (
                       <PaperButton
-                        mode="text"
+                        mode="contained-tonal"
                         icon="eye"
                         onPress={handleReveal}
                         loading={isRevealing}
                         disabled={isRevealing}
+                        style={styles.actionButton}
                       >
                         Reveal Saved Password
                       </PaperButton>
                     )}
                     <PaperButton
-                      mode="text"
+                      mode="contained"
                       icon="delete"
                       onPress={handleDelete}
-                      textColor={Colors[colorScheme].notification || "#ff3b30"}
-                      style={{ marginTop: 10, alignSelf: "center" }}
+                      buttonColor={Colors[colorScheme].notification}
+                      textColor={paperTheme.colors.surface}
+                      style={styles.actionButton}
                     >
                       Delete Entry
                     </PaperButton>
@@ -319,5 +326,8 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     marginLeft: 8,
+  },
+  actionButton: {
+    marginBottom: 16,
   },
 });
