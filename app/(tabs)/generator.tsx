@@ -110,12 +110,6 @@ export default function GeneratorScreen() {
       flex: 1,
       marginRight: 10,
     },
-    button: {
-      backgroundColor: Colors[colorScheme].tint,
-    },
-    buttonText: {
-      color: Colors[colorScheme].background,
-    },
     iconColor: Colors[colorScheme].tint,
     lengthButton: {
       borderColor: Colors[colorScheme].tint,
@@ -215,20 +209,16 @@ export default function GeneratorScreen() {
             />
           ))}
 
-          <TouchableOpacity
-            style={[styles.button, dynamicStyles.button]}
-            onPress={handleGeneratePassword}
-          >
-            <Text style={[styles.buttonText, dynamicStyles.buttonText]}>
+          {/* Button section updated */}
+          <View style={styles.buttonContainer}>
+            <PaperButton
+              mode="contained"
+              icon="arrow-right"
+              onPress={handleGeneratePassword}
+            >
               Generate Password
-            </Text>
-            <Feather
-              name="arrow-right"
-              size={20}
-              color={dynamicStyles.buttonText.color}
-              style={{ marginLeft: 8 }}
-            />
-          </TouchableOpacity>
+            </PaperButton>
+          </View>
         </ThemedView>
 
         {generatedPassword ? (
