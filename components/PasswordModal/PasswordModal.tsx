@@ -25,6 +25,7 @@ import {
 import { ThemedText } from "../ThemedText/ThemedText";
 import { ThemedView } from "../ThemedView";
 import { styles } from "./passwordModal.styles";
+import useBLE from "./useBLE";
 
 interface PasswordModalProps {
   visible: boolean;
@@ -134,15 +135,53 @@ export function PasswordModal({
     );
   };
 
-  const handleHardwareUnlock = () => {
+  //const {
+  //  allDevices,
+  //  connectedDevice,
+  //  connectToDevice,
+  //  color,
+  //  requestPermissions,
+  //  scanForPeripherals,
+  //} = useBLE();
+
+  const {
+    requestPermissions,
+  } = useBLE();
+
+  const scanForDevices = async () => {
+    const isPermissionsEnabled = await requestPermissions();
+    if (isPermissionsEnabled) {
+      console.log("Is permissions enabled");
+    //  scanForPeripherals();
+    }
+  };
+
+  const handleHardwareUnlock = async () => {
+    scanForDevices();
+
+  //  console.log(allDevices);
+
+    //if (!initialData){
+    //  Alert.alert("Error", "Not initialData.");
+    //  return;
+    //} 
+
+    //const decrypted = await onRevealPassword(initialData);
+    //if (decrypted) {
+    //} else {
+    //  Alert.alert("Error", "Could not decrypt password.");
+    //}
+
+    
+
     console.log(
       "Hardware unlock feature pressed for:",
       initialData?.serviceName
     );
-    Alert.alert(
-      "Feature in Development",
-      "This feature will soon allow you to auto-fill your credentials using the hardware device."
-    );
+    // Alert.alert(
+    //   "Feature in Development",
+    //   "This feature will soon allow you to auto-fill your credentials using the hardware device."
+    // );
   };
 
   return (
