@@ -135,44 +135,52 @@ export function PasswordModal({
     );
   };
 
-  //const {
-  //  allDevices,
-  //  connectedDevice,
-  //  connectToDevice,
-  //  color,
-  //  requestPermissions,
-  //  scanForPeripherals,
-  //} = useBLE();
-
   const {
+    allDevices,
+    connectedDevice,
+    connectToDevice,
     requestPermissions,
+    scanForPeripherals,
+    sendPassword
   } = useBLE();
 
   const scanForDevices = async () => {
     const isPermissionsEnabled = await requestPermissions();
     if (isPermissionsEnabled) {
       console.log("Is permissions enabled");
-    //  scanForPeripherals();
+      scanForPeripherals();
     }
   };
 
   const handleHardwareUnlock = async () => {
+    if (!initialData){
+      Alert.alert("Error", "Not initialData.");
+      return;
+    }
+
     scanForDevices();
 
-  //  console.log(allDevices);
+    const device = allDevices.find((dev) => dev.name == "PASSWORD_MANAGER");
 
-    //if (!initialData){
-    //  Alert.alert("Error", "Not initialData.");
-    //  return;
-    //} 
+    if(device != null){
+      connectToDevice(device);
+    } else {
+      Alert.alert("Error", "Device not found.");
+      return;
+    }
 
-    //const decrypted = await onRevealPassword(initialData);
-    //if (decrypted) {
-    //} else {
-    //  Alert.alert("Error", "Could not decrypt password.");
-    //}
+    const decrypted = await onRevealPassword(initialData);
 
-    
+    if (decrypted) {
+      console.log("Decrypted: ", decrypted);
+    } else {
+      Alert.alert("Error", "Could not decrypt password.");
+      return;
+    }
+
+    console.log(device);
+
+    sendPassword(device, decrypted);  
 
     console.log(
       "Hardware unlock feature pressed for:",
