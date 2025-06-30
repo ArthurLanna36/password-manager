@@ -26,6 +26,7 @@
         "android.permission.BLUETOOTH_CONNECT"
       ],
       "package": "com.anonymous.passwordmanager"
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "bundler": "metro",
@@ -34,6 +35,7 @@
     },
     "plugins": [
       "expo-router",
+      "@react-native-firebase/app",
       [
         "expo-splash-screen",
         {
@@ -54,13 +56,19 @@
           "bluetoothAlwaysPermission": "Allow $(PRODUCT_NAME) to connect to bluetooth devices"
         }
       ]
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
     },
     "extra": {
       "EXPO_PUBLIC_SUPABASE_URL": "https://tabsyjxklcxaramykdxe.supabase.co",
-      "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRhYnN5anhrbGN4YXJhbXlrZHhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcxNDk0NzMsImV4cCI6MjA2MjcyNTQ3M30.jrTYKvRzRqVILRQHMLqbtmjqDCjtVTJfYnsKwGmiqrQ"
-    }
+      "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRhYnN5anhrbGN4YXJhbXlrZHhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcxNDk0NzMsImV4cCI6MjA2MjcyNTQ3M30.jrTYKvRzRqVILRQHMLqbtmjqDCjtVTJfYnsKwGmiqrQ",
+      "router": {},
+      "eas": {
+        "projectId": "f4843519-5517-44c0-9321-643500376a89"
+      }
+    },
+    "owner": "marcus305"
   }
 }

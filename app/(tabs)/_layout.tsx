@@ -1,135 +1,67 @@
-import { Feather } from "@expo/vector-icons";
-import React, { useState } from "react";
-import { View } from "react-native";
-import {
-  Appbar,
-  BottomNavigation,
-  Text as PaperText,
-  useTheme,
-} from "react-native-paper";
-
-import GeneratorScreen from "./generator";
-import HomeScreen from "./index";
-import SettingsScreen from "./settings";
-import VaultScreen from "./vault";
-
-import { Colors } from "@/constants/Colors";
-import {
-  GeneratorProvider,
-  useGeneratorContext,
-} from "@/contexts/GeneratorContext";
-import { useColorScheme } from "@/hooks/useColorScheme";
-
-// Inner component to access context within the provider's scope
-function TabLayoutContent() {
-  const colorScheme = useColorScheme() ?? "light";
-  const paperTheme = useTheme();
-  const [index, setIndex] = useState(0);
-
-  const { setNeedsClear, clearPasswordAction } = useGeneratorContext();
-
-  const [routes] = useState([
-    {
-      key: "home",
-      title: "Home",
-      tabBarLabel: "Home",
-      focusedIcon: ({ color, size }: { color: string; size: number }) => (
-        <Feather name="home" size={size} color={color} />
-      ),
-      unfocusedIcon: ({ color, size }: { color: string; size: number }) => (
-        <Feather name="home" size={size} color={color} />
-      ),
-    },
-    {
-      key: "vault",
-      title: "Your Vault",
-      tabBarLabel: "Vault",
-      focusedIcon: ({ color, size }: { color: string; size: number }) => (
-        <Feather name="shield" size={size} color={color} />
-      ),
-      unfocusedIcon: ({ color, size }: { color: string; size: number }) => (
-        <Feather name="shield" size={size} color={color} />
-      ),
-    },
-    {
-      key: "generator",
-      title: "Password Generator",
-      tabBarLabel: "Generator",
-      focusedIcon: ({ color, size }: { color: string; size: number }) => (
-        <Feather name="key" size={size} color={color} />
-      ),
-      unfocusedIcon: ({ color, size }: { color: string; size: number }) => (
-        <Feather name="key" size={size} color={color} />
-      ),
-    },
-    {
-      key: "settings",
-      title: "Settings",
-      tabBarLabel: "Settings",
-      focusedIcon: ({ color, size }: { color: string; size: number }) => (
-        <Feather name="settings" size={size} color={color} />
-      ),
-      unfocusedIcon: ({ color, size }: { color: string; size: number }) => (
-        <Feather name="settings" size={size} color={color} />
-      ),
-    },
-  ]);
-
-  const renderScene = BottomNavigation.SceneMap({
-    home: HomeScreen,
-    vault: VaultScreen,
-    generator: GeneratorScreen,
-    settings: SettingsScreen,
-  });
-
-  const currentRouteTitle = routes[index].title;
-  const generatorRouteKey = "generator";
-
-  const handleIndexChange = (newIndex: number) => {
-    const previousRouteKey = routes[index].key;
-    if (previousRouteKey === generatorRouteKey && newIndex !== index) {
-      if (clearPasswordAction) {
-        clearPasswordAction();
-      } else {
-        setNeedsClear(true);
-      }
-    }
-    setIndex(newIndex);
-  };
-
-  return (
-    <View style={{ flex: 1 }}>
-      <Appbar.Header
-        style={{ backgroundColor: paperTheme.colors.elevation.level2 }}
-      >
-        <Appbar.Content
-          title={currentRouteTitle}
-          titleStyle={{ color: Colors[colorScheme].text }}
-        />
-      </Appbar.Header>
-
-      <BottomNavigation
-        navigationState={{ index, routes }}
-        onIndexChange={handleIndexChange}
-        renderScene={renderScene}
-        shifting={false}
-        barStyle={{ backgroundColor: paperTheme.colors.elevation.level2 }}
-        activeColor={Colors[colorScheme].tint}
-        inactiveColor={Colors[colorScheme].tabIconDefault}
-        renderLabel={({ route, color }) => (
-          <PaperText style={{ color, fontSize: 12, textAlign: "center" }}>
-            {route.tabBarLabel}
-          </PaperText>
-        )}
-      />
-    </View>
-  );
-}
+import React from 'react';
+import { Tabs } from 'expo-router';
+import { Feather } from '@expo/vector-icons';
+import { useTheme } from 'react-native-paper';
+import { Colors } from '@/constants/Colors';
+import { useColorScheme } from '@/hooks/useColorScheme';
+import { GeneratorProvider } from '@/contexts/GeneratorContext';
 
 export default function TabLayout() {
+  const paperTheme = useTheme();
+  const colorScheme = useColorScheme() ?? 'dark';
+
   return (
     <GeneratorProvider>
-      <TabLayoutContent />
+      <Tabs
+        screenOptions={{
+          tabBarActiveTintColor: Colors[colorScheme].tint,
+          tabBarInactiveTintColor: Colors[colorScheme].tabIconDefault,
+          tabBarStyle: {
+              backgroundColor: paperTheme.colors.elevation.level2,
+          },
+          headerStyle: {
+              backgroundColor: paperTheme.colors.elevation.level2,
+          },
+          headerTitleStyle: {
+              color: Colors[colorScheme].text,
+          },
+        }}>
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: 'Home',
+            tabBarIcon: ({ color }) => <Feather name="home" size={24} color={color} />,
+          }}
+        />
+        <Tabs.Screen
+          name="vault"
+          options={{
+            title: 'Your Vault',
+            tabBarIcon: ({ color }) => <Feather name="shield" size={24} color={color} />,
+          }}
+        />
+        <Tabs.Screen
+          name="generator"
+          options={{
+            title: 'Password Generator',
+            tabBarIcon: ({ color }) => <Feather name="key" size={24} color={color} />,
+          }}
+        />
+        <Tabs.Screen
+          name="alerts"
+          options={{
+            title: 'Security Alerts',
+            tabBarIcon: ({ color }) => <Feather name="alert-triangle" size={24} color={color} />,
+          }}
+        />
+        <Tabs.Screen
+          name="settings"
+          options={{
+            title: 'Settings',
+            tabBarIcon: ({ color }) => <Feather name="settings" size={24} color={color} />,
+          }}
+        />
+      </Tabs>
     </GeneratorProvider>
   );
 }

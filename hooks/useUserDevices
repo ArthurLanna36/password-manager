@@ -1,0 +1,93 @@
+import { supabase } from "@/constants/supabase";
+import { devicesEntry } from "@/types/userDevices";
+import { User } from "@supabase/supabase-js";
+import {
+  useState,
+  useCallback
+} from "react";
+import { Alert } from "react-native";
+
+const VAULT_TABLE_NAME = "user_devices";
+const VAULT_PK_COLUMN = "device_id";
+
+
+interface UseAuditLogProps {
+  currentUser: User;
+}
+
+interface AuditLog {
+  devices: devicesEntry[];
+  handleSubmit: (
+    formData: devicesEntry
+  ) => Promise<devicesEntry | null>;
+  fetchUserDevices: () =>
+    Promise<devicesEntry>;
+}
+
+export function useUserDevices({
+  currentUser,
+}: UseAuditLogProps): AuditLog {
+  const [devices, setDevices] = useState<devicesEntry[]>([]);
+  const [device, setDevice] = useState<devicesEntry>([]);
+
+  const fetchUserDevices = async(): Promise<devicesEntry> => {
+    try {
+        if (!currentUser) throw new Error("User not authenticated.");
+        const { data, error: dbError } = await supabase
+          .from(VAULT_TABLE_NAME)
+          .select(
+            `${VAULT_PK_COLUMN}, name, last_sync, active, created_at, user_id`
+          )
+          .eq("user_id", currentUser.id)
+          .order("name", { ascending: true });
+
+        if (dbError) throw dbError;
+        setDevices(
+          data?.map((item: any) => ({
+            deviceId: item[VAULT_PK_COLUMN],
+            name: item.name,
+            last_sync: item.last_sync,
+            active: item.active,
+            created_at: item.created_at,
+            user_id: item.user_id,
+          })) || []
+        );
+    } catch (error: any) {
+      Alert.alert("Error Loading Passwords", error.message);
+      setDevices([]);
+    }
+    return devices;
+  };
+
+  const handleSubmit = async (
+    formData: devicesEntry
+  ): Promise<devicesEntry | null> => {
+    try {
+      const { data, error } = await supabase
+        .from(VAULT_TABLE_NAME)
+        .insert([
+          {
+            name: formData.name,
+            active: formData.active,
+            user_id: currentUser,
+          },
+        ])
+        .select() 
+
+      if (error) throw error;
+
+      const inserted = data?.[0];
+      return inserted;
+    } catch (error: any) {
+      Alert.alert("Log Error", error.message);
+      return null;
+    }
+  };
+
+
+  return {
+    devices,
+    handleSubmit,
+    fetchUserDevices
+  };
+}

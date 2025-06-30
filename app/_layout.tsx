@@ -1,124 +1,56 @@
-// app/_layout.tsx
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import {
-  DarkTheme as NavigationDarkTheme,
-  DefaultTheme as NavigationDefaultTheme,
-  ThemeProvider,
-} from "@react-navigation/native";
-import { Session } from "@supabase/supabase-js";
+import { DarkTheme as NavigationDarkTheme, DefaultTheme as NavigationDefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { useFonts } from "expo-font";
-import { Stack, useRouter } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, AppState, View } from "react-native";
-import { MD3DarkTheme, MD3LightTheme, PaperProvider } from "react-native-paper";
-
-import { supabase } from "@/constants/supabase";
+import { SplashScreen, Stack, useRouter, useSegments } from "expo-router";
+import React, { useEffect } from "react";
+import { PaperProvider, MD3DarkTheme, MD3LightTheme } from "react-native-paper";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { useAuthSession } from "@/hooks/useAuthSession"; 
 
-const KEEP_ME_SIGNED_IN_KEY = "keepMeSignedInPreference";
+SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme() ?? "dark";
-  const router = useRouter();
-  const appState = useRef(AppState.currentState);
-
-  const [fontsLoaded] = useFonts({
+  const { session, loading } = useAuthSession();
+  const [fontsLoaded, fontError] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  
+  const segments = useSegments();
+  const router = useRouter();
+  const colorScheme = useColorScheme() ?? 'dark';
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
-      setSession(currentSession);
-      setLoading(false);
-    });
-
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      (_event, newSession) => {
-        setSession(newSession);
-      }
-    );
-
-    const subscription = AppState.addEventListener(
-      "change",
-      async (nextAppState) => {
-        if (
-          appState.current === "active" &&
-          nextAppState.match(/inactive|background/)
-        ) {
-          // App has gone to the background
-          try {
-            const keepSignedInPref = await AsyncStorage.getItem(
-              KEEP_ME_SIGNED_IN_KEY
-            );
-
-            const shouldKeepSignedIn =
-              keepSignedInPref !== null ? JSON.parse(keepSignedInPref) : true;
-
-            if (!shouldKeepSignedIn) {
-              const {
-                data: { session: activeSession },
-              } = await supabase.auth.getSession();
-              if (activeSession) {
-                // Only sign out if there is an active session
-                await supabase.auth.signOut();
-              }
-            }
-          } catch (e) {
-            console.error(
-              "Failed to read or handle keepMeSignedIn preference on backgrounding.",
-              e
-            );
-          }
-        }
-        appState.current = nextAppState;
-      }
-    );
-
-    return () => {
-      authListener.subscription.unsubscribe();
-      subscription.remove();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!loading && !session) {
-      router.replace("/login-page");
+    if (loading || (!fontsLoaded && !fontError)) {
+      return;
     }
-  }, [loading, session, router]);
 
-  if (!fontsLoaded || loading) {
-    return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
+    const inAuthGroup = segments[0] === '(tabs)';
+
+    if (!session && inAuthGroup) {
+      router.replace('/login-page');
+    } 
+    
+    else if (session && !inAuthGroup) {
+      router.replace('/');
+    }
+
+    SplashScreen.hideAsync();
+
+  }, [session, loading, fontsLoaded, fontError, segments, router]);
+
+  if (!fontsLoaded && !fontError) {
+    return null;
   }
 
   const paperThemeToUse = colorScheme === "dark" ? MD3DarkTheme : MD3LightTheme;
-  const navigationThemeToUse =
-    colorScheme === "dark" ? NavigationDarkTheme : NavigationDefaultTheme;
+  const navigationThemeToUse = colorScheme === "dark" ? NavigationDarkTheme : NavigationDefaultTheme;
 
   return (
     <PaperProvider theme={paperThemeToUse}>
       <ThemeProvider value={navigationThemeToUse}>
         <Stack>
-          {session ? (
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          ) : (
-            <>
-              <Stack.Screen
-                name="login-page"
-                options={{ headerShown: false }}
-              />
-              <Stack.Screen
-                name="register-page"
-                options={{ headerShown: false }}
-              />
-            </>
-          )}
-          <Stack.Screen name="+not-found" options={{ title: "Oops!" }} />
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="login-page" options={{ headerShown: false }} />
+          <Stack.Screen name="register-page" options={{ headerShown: false }} />
         </Stack>
       </ThemeProvider>
     </PaperProvider>
