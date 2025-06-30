@@ -22,8 +22,6 @@ class LogCheckRequest(BaseModel):
     location_lat: float | None = None
     location_lon: float | None = None
 
-# --- Funções de Análise (Cérebro da IA) ---
-
 def analyze_time_anomaly(new_log_time_utc: datetime, user_logs: pd.DataFrame) -> bool:
     """
     Analisa a anomalia de tempo focando apenas no cluster de atividade principal do usuário.
@@ -102,7 +100,6 @@ async def check_log_anomaly(request: LogCheckRequest):
     user_id = request.user_id
     response = supabase.from_("audit_log").select("log_id, log_date, location_lat, location_lon").eq("user_id", user_id).order('log_date', desc=True).limit(100).execute()
     
-    # ✅ A função auxiliar que salva e notifica
     def handle_anomaly(reason: str, log_id: str | None = None):
         profile_res = supabase.from_("user_profiles").select("push_token").eq("id", user_id).single().execute()
         push_token = profile_res.data.get('push_token') if profile_res.data else None
@@ -122,12 +119,10 @@ async def check_log_anomaly(request: LogCheckRequest):
     
     last_log_id = response.data[0]['log_id']
 
-    # ✅ A chamada para handle_anomaly está aqui
     if request.location_lat and request.location_lon:
         if analyze_location_anomaly(request.location_lat, request.location_lon, user_logs_df.copy()):
             return handle_anomaly("Unusual location detected.", last_log_id)
     
-    # ✅ E a chamada para handle_anomaly foi restaurada aqui também
     if analyze_time_anomaly(new_log_time, user_logs_df.copy()):
         return handle_anomaly("Unusual login time detected.", last_log_id)
     
