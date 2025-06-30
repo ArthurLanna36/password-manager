@@ -2,7 +2,6 @@
   "name": "password-manager",
   "main": "expo-router/entry",
   "version": "1.0.0",
-  "private": true,
   "scripts": {
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
@@ -46,8 +45,6 @@
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-native": "0.79.4",
-    "react-native-base64": "^0.2.1",
-    "react-native-ble-plx": "^3.5.0",
     "react-native-crypto": "^2.2.0",
     "react-native-gesture-handler": "~2.24.0",
     "react-native-paper": "^5.14.5",
@@ -65,11 +62,11 @@
     "@babel/core": "^7.25.2",
     "@types/crypto-js": "^4.2.2",
     "@types/react": "~19.0.10",
-    "@types/react-native-base64": "^0.2.2",
     "eas-cli": "^16.13.2",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~9.2.0",
     "supabase": "^2.26.9",
     "typescript": "~5.8.3"
-  }
+  },
+  "private": true
 }
