@@ -98,9 +98,8 @@ function useBLE() {
   const scanForPeripherals = () =>
     bleManager.startDeviceScan(null, null, (error, device) => {
       if (error) {
-        console.log(error);
+        //console.log(error);
       }
-
       if (
         device &&
         (device.localName === "PASSWORD_MANAGER" || device.name === "PASSWORD_MANAGER")
@@ -114,17 +113,38 @@ function useBLE() {
       }
     });
 
-  const sendPassword = async (device: Device, password: string) => {
-    const password_encoded = base64.encode(password);
-    try {
-      await bleManager.writeCharacteristicWithResponseForDevice(
-        device?.id ?? "",
-        DATA_SERVICE_UUID,
-        PASSWORD_CHARACTERISTIC_UUID,
-        password_encoded
-      )
-    } catch(e) {
-      console.log(e);
+  const sendPassword = async (device: Device, message: string) => {
+
+    function splitStringEveryN(str: string, n: number) {
+      // The regular expression /.{1,n}/g matches any character (except newline)
+      // one to 'n' times, globally (g).
+      // This effectively extracts chunks of 'n' characters.
+      return str.match(new RegExp(`[\\s\\S]{1,${n}}`, 'g')) || [];
+    }
+
+    console.log(message);
+
+    const segmentLength = 18;
+    const result = splitStringEveryN(message, segmentLength);
+
+    console.log("result", result);
+
+    for (let i = 0; i < result.length; i++) {
+      const element = base64.encode(result[i]);
+      console.log(element);
+
+      try {
+        await bleManager.writeCharacteristicWithoutResponseForDevice(
+          device?.id ?? "",
+          DATA_SERVICE_UUID,
+          PASSWORD_CHARACTERISTIC_UUID,
+          element
+        )
+      } catch(e) {
+        console.log(e);
+      }
+
+      await new Promise(r => setTimeout(r, 1000));
     }
   };
 

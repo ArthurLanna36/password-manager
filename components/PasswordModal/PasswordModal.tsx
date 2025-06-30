@@ -147,20 +147,24 @@ export function PasswordModal({
   const scanForDevices = async () => {
     const isPermissionsEnabled = await requestPermissions();
     if (isPermissionsEnabled) {
-      console.log("Is permissions enabled");
+      console.log("Permissions granted");
       scanForPeripherals();
     }
   };
 
   const handleHardwareUnlock = async () => {
+    // Check InitialData.
     if (!initialData){
-      Alert.alert("Error", "Not initialData.");
+      Alert.alert("Error", "initialData is empty");
       return;
     }
 
     scanForDevices();
+    console.log("device:", connectedDevice);
 
     const device = allDevices.find((dev) => dev.name == "PASSWORD_MANAGER");
+
+    console.log(device);
 
     if(device != null){
       connectToDevice(device);
@@ -170,6 +174,7 @@ export function PasswordModal({
     }
 
     const decrypted = await onRevealPassword(initialData);
+    const email = initialData?.username;
 
     if (decrypted) {
       console.log("Decrypted: ", decrypted);
@@ -178,9 +183,15 @@ export function PasswordModal({
       return;
     }
 
-    console.log(device);
+    const message = `${email}\t${decrypted}\n`;
 
-    sendPassword(device, decrypted);  
+    console.log(message);
+
+    sendPassword(device, message);
+    // await sendPassword(device, `${email}`);
+    // await new Promise(r => setTimeout(r, 100));
+    // await sendPassword(device, `\t${decrypted}\n`);
+    // sendPassword(device, "\n");
 
     console.log(
       "Hardware unlock feature pressed for:",
