@@ -25,7 +25,7 @@
         "android.permission.BLUETOOTH_ADMIN",
         "android.permission.BLUETOOTH_CONNECT"
       ],
-      "package": "com.anonymous.passwordmanager"
+      "package": "com.anonymous.passwordmanager",
       "googleServicesFile": "./google-services.json"
     },
     "web": {
@@ -49,13 +49,10 @@
         "react-native-ble-plx",
         {
           "isBackgroundEnabled": true,
-          "modes": [
-            "peripheral",
-            "central"
-          ],
+          "modes": ["peripheral", "central"],
           "bluetoothAlwaysPermission": "Allow $(PRODUCT_NAME) to connect to bluetooth devices"
         }
-      ]
+      ],
       "expo-web-browser"
     ],
     "experiments": {
