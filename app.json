@@ -20,9 +20,6 @@
       "permissions": [
         "android.permission.BLUETOOTH",
         "android.permission.BLUETOOTH_ADMIN",
-        "android.permission.BLUETOOTH_CONNECT",
-        "android.permission.BLUETOOTH",
-        "android.permission.BLUETOOTH_ADMIN",
         "android.permission.BLUETOOTH_CONNECT"
       ],
       "package": "com.anonymous.passwordmanager",
@@ -49,7 +46,10 @@
         "react-native-ble-plx",
         {
           "isBackgroundEnabled": true,
-          "modes": ["peripheral", "central"],
+          "modes": [
+            "peripheral",
+            "central"
+          ],
           "bluetoothAlwaysPermission": "Allow $(PRODUCT_NAME) to connect to bluetooth devices"
         }
       ],
@@ -63,9 +63,8 @@
       "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRhYnN5anhrbGN4YXJhbXlrZHhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcxNDk0NzMsImV4cCI6MjA2MjcyNTQ3M30.jrTYKvRzRqVILRQHMLqbtmjqDCjtVTJfYnsKwGmiqrQ",
       "router": {},
       "eas": {
-        "projectId": "f4843519-5517-44c0-9321-643500376a89"
+        "projectId": "c4720342-f88e-48a1-8adb-d7281b7585b3"
       }
-    },
-    "owner": "marcus305"
+    }
   }
 }
