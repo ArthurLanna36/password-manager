@@ -2,57 +2,77 @@ import { DarkTheme as NavigationDarkTheme, DefaultTheme as NavigationDefaultThem
 import { useFonts } from "expo-font";
 import { SplashScreen, Stack, useRouter, useSegments } from "expo-router";
 import React, { useEffect } from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { PaperProvider, MD3DarkTheme, MD3LightTheme } from "react-native-paper";
 import { useColorScheme } from "@/hooks/useColorScheme";
-import { useAuthSession } from "@/hooks/useAuthSession"; 
+import { useAuthSession } from "@/hooks/useAuthSession";
+
 
 SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
+function RootLayoutNav() {
   const { session, loading } = useAuthSession();
-  const [fontsLoaded, fontError] = useFonts({
-    SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
-  });
-  
   const segments = useSegments();
   const router = useRouter();
-  const colorScheme = useColorScheme() ?? 'dark';
 
   useEffect(() => {
-    if (loading || (!fontsLoaded && !fontError)) {
-      return;
+    if (loading) {
+      return; 
     }
 
-    const inAuthGroup = segments[0] === '(tabs)';
-
-    if (!session && inAuthGroup) {
-      router.replace('/login-page');
-    } 
     
-    else if (session && !inAuthGroup) {
+    const inTabsGroup = segments[0] === '(tabs)';
+
+    
+    if (!session && inTabsGroup) {
+      router.replace('/login-page');
+    } else if (session && !inTabsGroup) {
       router.replace('/');
     }
 
+    
     SplashScreen.hideAsync();
+    
+  }, [session, loading, segments, router]);
 
-  }, [session, loading, fontsLoaded, fontError, segments, router]);
+  return (
+    <Stack>
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="login-page" options={{ headerShown: false }} />
+      <Stack.Screen name="register-page" options={{ headerShown: false }} />
+      <Stack.Screen name="+not-found" />
+    </Stack>
+  );
+}
 
+export default function RootLayout() {
+  const [fontsLoaded, fontError] = useFonts({
+    SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
+  });
+
+  const colorScheme = useColorScheme() ?? 'dark';
+  const paperThemeToUse = colorScheme === "dark" ? MD3DarkTheme : MD3LightTheme;
+  const navigationThemeToUse = colorScheme === "dark" ? NavigationDarkTheme : NavigationDefaultTheme;
+
+  useEffect(() => {
+    
+    if (fontError) {
+      SplashScreen.hideAsync();
+    }
+  }, [fontError]);
+
+  
   if (!fontsLoaded && !fontError) {
     return null;
   }
 
-  const paperThemeToUse = colorScheme === "dark" ? MD3DarkTheme : MD3LightTheme;
-  const navigationThemeToUse = colorScheme === "dark" ? NavigationDarkTheme : NavigationDefaultTheme;
-
   return (
-    <PaperProvider theme={paperThemeToUse}>
-      <ThemeProvider value={navigationThemeToUse}>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="login-page" options={{ headerShown: false }} />
-          <Stack.Screen name="register-page" options={{ headerShown: false }} />
-        </Stack>
-      </ThemeProvider>
-    </PaperProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <PaperProvider theme={paperThemeToUse}>
+        <ThemeProvider value={navigationThemeToUse}>
+          <RootLayoutNav />
+        </ThemeProvider>
+      </PaperProvider>
+    </GestureHandlerRootView>
   );
 }
