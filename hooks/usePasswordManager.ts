@@ -1,6 +1,7 @@
 // hooks/usePasswordManager.ts
 import { supabase } from "@/constants/supabase";
 import { PasswordEntry, PasswordFormData } from "@/types/vault";
+import { logAuditEvent } from '@/utils/auditLogService';
 import {
   decryptDataWithKey,
   encryptDataWithKey,
@@ -172,6 +173,7 @@ export function usePasswordManager({
           .eq("user_id", currentUser.id);
         if (error) throw error;
         Alert.alert("Success", "Password updated!");
+        logAuditEvent('PASSWORD_UPDATED', currentUser, { credential_id: editingPassword.id });
       } else {
         const { error } = await supabase.from(VAULT_TABLE_NAME).insert([
           {
@@ -185,6 +187,7 @@ export function usePasswordManager({
         ]);
         if (error) throw error;
         Alert.alert("Success", "Password added!");
+        logAuditEvent('PASSWORD_CREATED', currentUser, { details: `Service: ${formData.serviceName}` });
       }
       await fetchPasswords();
       setScreenLoading(false);
@@ -194,6 +197,8 @@ export function usePasswordManager({
       setScreenLoading(false);
       return false;
     }
+
+    
   };
 
   const handleDeletePassword = async (itemToDelete: PasswordEntry) => {
@@ -211,6 +216,9 @@ export function usePasswordManager({
           style: "destructive",
           onPress: async () => {
             setScreenLoading(true);
+            logAuditEvent('PASSWORD_DELETED', currentUser, { 
+              details: `Deletion of credential id ${itemToDelete.id}` 
+            });
             const { error } = await supabase
               .from(VAULT_TABLE_NAME)
               .delete()

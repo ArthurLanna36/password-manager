@@ -13,30 +13,16 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextStyle,
   TouchableOpacity,
   View,
-  ViewStyle,
 } from "react-native";
 import { Checkbox, TextInput } from "react-native-paper";
+import { logAuditEvent } from "@/utils/auditLogService"; 
+import { registerForPushNotificationsAsync, savePushToken } from "@/utils/notificationService"; 
 
 const KEEP_ME_SIGNED_IN_KEY = "keepMeSignedInPreference";
 
-type Styles = {
-  safe: ViewStyle;
-  flex: ViewStyle;
-  container: ViewStyle;
-  title: TextStyle;
-  input: TextStyle;
-  button: ViewStyle;
-  buttonDisabled: ViewStyle;
-  buttonText: TextStyle;
-  linkWrapper: ViewStyle;
-  link: TextStyle;
-  checkboxContainer: ViewStyle;
-};
-
-const styles = StyleSheet.create<Styles>({
+const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#000" },
   flex: { flex: 1 },
   container: {
@@ -97,26 +83,53 @@ export default function LoginPage() {
 
   const handleSignIn = async () => {
     if (loading) return;
+    if (loading) return;
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
 
-    if (error) {
-      setLoading(false);
-      Alert.alert("Login failed", error.message);
-    } else {
-      try {
-        await AsyncStorage.setItem(
-          KEEP_ME_SIGNED_IN_KEY,
-          JSON.stringify(keepMeSignedIn)
-        );
-      } catch (e) {
-        console.error("Failed to save keepMeSignedIn preference.", e);
+    try {
+      // Login process initializer
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error || !data.user) {
+        throw new Error(error?.message || "User not found.");
       }
+
+      const { user } = data;
+      // User id get
+
+      const { error: profileError } = await supabase
+        .from('user_profiles')
+        .upsert({ id: user.id, username: user.email?.split('@')[0] || 'New User' }, { onConflict: 'id' });
+
+      if (profileError) {
+        throw new Error(`Could not initialize profile: ${profileError.message}`);
+      }
+      // User garanted login
+
+      try {
+          await logAuditEvent('LOGIN_SUCCESS', user);
+          // audit log send
+
+          const token = await registerForPushNotificationsAsync();
+          if (token) {
+              // Trying to save token 
+              await savePushToken(user.id, token);
+          } else {
+              // Token error
+          }
+      } catch(secondaryError) {
+          // Secondary error
+      }
+
+      router.replace('/');
+
+    } catch (err: any) {
+      Alert.alert("Login failed", err.message);
+    } finally {
       setLoading(false);
-      router.replace("/");
     }
   };
 
@@ -124,7 +137,7 @@ export default function LoginPage() {
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.select({ ios: "padding", android: undefined })}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <ScrollView
           contentContainerStyle={styles.container}

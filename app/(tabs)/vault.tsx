@@ -10,6 +10,7 @@ import { useColorScheme } from "@/hooks/useColorScheme";
 import { usePasswordManager } from "@/hooks/usePasswordManager";
 import { useVaultStatus } from "@/hooks/useVaultStatus";
 import { PasswordEntry, PasswordFormData } from "@/types/vault";
+import { logAuditEvent } from '@/utils/auditLogService';
 import { decryptDataWithKey } from "@/utils/encryptionService";
 import { Feather } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
@@ -48,7 +49,7 @@ export default function VaultScreen() {
     fetchPasswords,
     handleModalSubmit: pmHandleModalSubmit,
     handleDeletePassword: pmHandleDeletePassword,
-    copyToClipboard,
+    copyToClipboard: pmCopyToClipboard,
     isPasswordLoading,
     isRefreshingPasswords,
   } = usePasswordManager({
@@ -65,14 +66,12 @@ export default function VaultScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      setIsScreenLoading(true);
+      setIsScreenLoading(true); 
       checkVaultStatusInternal().finally(() => {
-        if (needsVaultSetup || isVaultLocked) {
-          setIsScreenLoading(false);
-        }
+        setIsScreenLoading(false); 
       });
       return () => {};
-    }, [checkVaultStatusInternal, needsVaultSetup, isVaultLocked])
+    }, [checkVaultStatusInternal]) 
   );
 
   useEffect(() => {
@@ -116,11 +115,19 @@ export default function VaultScreen() {
 
   const handleRevealPassword = async (item: PasswordEntry) => {
     if (!derivedEncryptionKey) return null;
+
+    logAuditEvent('PASSWORD_REVEALED', currentUser, { credential_id: item.id });
+
     return decryptDataWithKey(
       item.passwordEncrypted,
       item.iv,
       derivedEncryptionKey
     );
+  };
+
+  const copyToClipboard = (textToCopy: string, item: PasswordEntry) => {
+    logAuditEvent('PASSWORD_COPIED', currentUser, { credential_id: item.id });
+    pmCopyToClipboard(textToCopy);
   };
 
   if (isVaultStatusLoading && !currentUser && !derivedEncryptionKey) {
@@ -200,7 +207,7 @@ export default function VaultScreen() {
         initialData={editingPassword}
         onRevealPassword={handleRevealPassword}
         onDeletePassword={pmHandleDeletePassword}
-        onCopyToClipboard={copyToClipboard}
+        onCopyToClipboard={(text) => editingPassword && copyToClipboard(text, editingPassword)}
       />
     </ThemedView>
   );

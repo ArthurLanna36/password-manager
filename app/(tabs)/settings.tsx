@@ -6,14 +6,20 @@ import { Card, List, useTheme } from "react-native-paper";
 import { Colors } from "@/constants/Colors";
 import { supabase } from "@/constants/supabase";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { logAuditEvent } from "@/utils/auditLogService";
 import { styles } from "./styles/settings.styles";
-
 export default function SettingsScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme() ?? "light";
   const paperTheme = useTheme();
 
   const handleLogout = async () => {
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      logAuditEvent('LOGOUT', user);
+    }
+
     await supabase.auth.signOut();
     router.replace("/login-page");
   };
